@@ -1,3 +1,20 @@
+import {
+  DndContext,
+  KeyboardSensor,
+  PointerSensor,
+  closestCenter,
+  useSensor,
+  useSensors,
+  type DragEndEvent,
+} from "@dnd-kit/core";
+import {
+  SortableContext,
+  arrayMove,
+  sortableKeyboardCoordinates,
+  useSortable,
+  verticalListSortingStrategy,
+} from "@dnd-kit/sortable";
+import { CSS } from "@dnd-kit/utilities";
 import type { Bracket, Tournament } from "../types";
 import TeamChip from "./TeamChip";
 
@@ -25,12 +42,26 @@ export function groupOrderOf(bracket: Bracket, letter: string, teams: string[]):
 export default function GroupStage({ tournament, bracket, onChangeOrder, onToggleThird }: Props) {
   const thirdsChosen = bracket.thirdPlaceTeams.length;
 
+  // Pointer sensor works for both mouse and touch (iPhone). The small distance
+  // constraint lets normal taps/scrolls through until the user actually drags.
+  const sensors = useSensors(
+    useSensor(PointerSensor, { activationConstraint: { distance: 6 } }),
+    useSensor(KeyboardSensor, { coordinateGetter: sortableKeyboardCoordinates }),
+  );
+
   function move(letter: string, order: string[], idx: number, dir: -1 | 1) {
-    const next = [...order];
     const j = idx + dir;
-    if (j < 0 || j >= next.length) return;
-    [next[idx], next[j]] = [next[j], next[idx]];
-    onChangeOrder(letter, next);
+    if (j < 0 || j >= order.length) return;
+    onChangeOrder(letter, arrayMove(order, idx, j));
+  }
+
+  function handleDragEnd(letter: string, order: string[], e: DragEndEvent) {
+    const { active, over } = e;
+    if (!over || active.id === over.id) return;
+    const from = order.indexOf(String(active.id));
+    const to = order.indexOf(String(over.id));
+    if (from < 0 || to < 0) return;
+    onChangeOrder(letter, arrayMove(order, from, to));
   }
 
   // The third-placed team predicted in each group (position 3).
@@ -45,7 +76,7 @@ export default function GroupStage({ tournament, bracket, onChangeOrder, onToggl
         <h2 className="text-lg font-bold">Step 1 · Predict the group stage</h2>
         <p className="text-sm text-white/80 mt-1">
           Put each group in the order you think it will finish. The top 2 of every group go
-          through automatically. Use the arrows to reorder.
+          through automatically. <strong>Drag the ⠿ handle</strong> to reorder, or use the arrows.
         </p>
       </div>
 
@@ -55,36 +86,26 @@ export default function GroupStage({ tournament, bracket, onChangeOrder, onToggl
           return (
             <div key={g.letter} className="card">
               <h3 className="font-bold text-pitch-dark mb-2">Group {g.letter}</h3>
-              <ul className="space-y-1.5">
-                {order.map((team, idx) => (
-                  <li key={team} className="flex items-center gap-2">
-                    <span className={`text-xs font-bold px-2 py-0.5 rounded ${POS_STYLE[idx]}`}>
-                      {POS_LABEL[idx]}
-                    </span>
-                    <span className="flex-1 min-w-0">
-                      <TeamChip team={team} size="sm" />
-                    </span>
-                    <span className="flex flex-col">
-                      <button
-                        className="text-slate-400 hover:text-pitch leading-none disabled:opacity-30"
-                        disabled={idx === 0}
-                        onClick={() => move(g.letter, order, idx, -1)}
-                        aria-label="Move up"
-                      >
-                        ▲
-                      </button>
-                      <button
-                        className="text-slate-400 hover:text-pitch leading-none disabled:opacity-30"
-                        disabled={idx === order.length - 1}
-                        onClick={() => move(g.letter, order, idx, 1)}
-                        aria-label="Move down"
-                      >
-                        ▼
-                      </button>
-                    </span>
-                  </li>
-                ))}
-              </ul>
+              <DndContext
+                sensors={sensors}
+                collisionDetection={closestCenter}
+                onDragEnd={(e) => handleDragEnd(g.letter, order, e)}
+              >
+                <SortableContext items={order} strategy={verticalListSortingStrategy}>
+                  <ul className="space-y-1.5">
+                    {order.map((team, idx) => (
+                      <SortableTeamRow
+                        key={team}
+                        team={team}
+                        idx={idx}
+                        last={idx === order.length - 1}
+                        onUp={() => move(g.letter, order, idx, -1)}
+                        onDown={() => move(g.letter, order, idx, 1)}
+                      />
+                    ))}
+                  </ul>
+                </SortableContext>
+              </DndContext>
             </div>
           );
         })}
@@ -125,5 +146,70 @@ export default function GroupStage({ tournament, bracket, onChangeOrder, onToggl
         </div>
       </div>
     </div>
+  );
+}
+
+interface RowProps {
+  team: string;
+  idx: number;
+  last: boolean;
+  onUp: () => void;
+  onDown: () => void;
+}
+
+function SortableTeamRow({ team, idx, last, onUp, onDown }: RowProps) {
+  const { attributes, listeners, setNodeRef, transform, transition, isDragging } = useSortable({
+    id: team,
+  });
+
+  const style: React.CSSProperties = {
+    transform: CSS.Transform.toString(transform),
+    transition,
+    zIndex: isDragging ? 10 : undefined,
+  };
+
+  return (
+    <li
+      ref={setNodeRef}
+      style={style}
+      className={`flex items-center gap-2 rounded-lg px-1 py-1 bg-white ${
+        isDragging ? "shadow-lg ring-2 ring-pitch/40" : ""
+      }`}
+    >
+      <button
+        {...attributes}
+        {...listeners}
+        className="touch-none cursor-grab active:cursor-grabbing text-slate-300 hover:text-slate-500 px-1 select-none"
+        aria-label={`Drag ${team} to reorder`}
+        // Prevent the browser from scrolling/selecting while dragging on touch.
+        style={{ touchAction: "none" }}
+      >
+        ⠿
+      </button>
+      <span className={`text-xs font-bold px-2 py-0.5 rounded ${POS_STYLE[idx]}`}>
+        {POS_LABEL[idx]}
+      </span>
+      <span className="flex-1 min-w-0">
+        <TeamChip team={team} size="sm" />
+      </span>
+      <span className="flex flex-col">
+        <button
+          className="text-slate-400 hover:text-pitch leading-none disabled:opacity-30"
+          disabled={idx === 0}
+          onClick={onUp}
+          aria-label="Move up"
+        >
+          ▲
+        </button>
+        <button
+          className="text-slate-400 hover:text-pitch leading-none disabled:opacity-30"
+          disabled={last}
+          onClick={onDown}
+          aria-label="Move down"
+        >
+          ▼
+        </button>
+      </span>
+    </li>
   );
 }
