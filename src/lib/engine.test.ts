@@ -37,6 +37,12 @@ describe("tournament skeleton", () => {
     expect(nums).toContain(103);
     expect(nums).toContain(104);
   });
+
+  it("orders each group's teams by FIFA rank (best first) by default", () => {
+    const groupC = tournament.groups.find((g) => g.letter === "C")!;
+    // Brazil(6) < Morocco(8) < Scotland(43) < Haiti(83)
+    expect(groupC.teams).toEqual(["Brazil", "Morocco", "Scotland", "Haiti"]);
+  });
 });
 
 describe("group standings", () => {

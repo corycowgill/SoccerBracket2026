@@ -9,6 +9,7 @@ import type {
   Tournament,
 } from "../types";
 import { KNOCKOUT_ROUNDS } from "../types";
+import { byFifaRank } from "./teamMeta";
 
 const KNOCKOUT_ROUND_SET = new Set<string>(KNOCKOUT_ROUNDS);
 
@@ -59,7 +60,9 @@ export function buildTournament(feed: FeedData): Tournament {
     .map((name) => ({
       letter: name.replace(/^Group\s+/i, "").trim(),
       name,
-      teams: [...groupTeams.get(name)!].sort(),
+      // Default order = strongest (best FIFA rank) first, so a fresh bracket
+      // starts with a sensible prediction the family can tweak.
+      teams: [...groupTeams.get(name)!].sort(byFifaRank),
     }));
 
   // The third-place and final matches in the feed sometimes lack `num`; assign
