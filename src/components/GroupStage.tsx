@@ -40,7 +40,15 @@ export function groupOrderOf(bracket: Bracket, letter: string, teams: string[]):
 }
 
 export default function GroupStage({ tournament, bracket, onChangeOrder, onToggleThird }: Props) {
-  const thirdsChosen = bracket.thirdPlaceTeams.length;
+  // The third-placed team predicted in each group (position 3) — the only valid picks.
+  const thirdCandidates = tournament.groups.map((g) => {
+    const order = groupOrderOf(bracket, g.letter, g.teams);
+    return { letter: g.letter, team: order[2] };
+  });
+  const candidateSet = new Set(thirdCandidates.map((c) => c.team));
+  // Count only picks that are still a current 3rd-place team (ignore stale ones
+  // left over from reordering, so the picker never gets wedged at a phantom 8).
+  const thirdsChosen = bracket.thirdPlaceTeams.filter((t) => candidateSet.has(t)).length;
 
   // Pointer sensor works for both mouse and touch (iPhone). The small distance
   // constraint lets normal taps/scrolls through until the user actually drags.
@@ -63,12 +71,6 @@ export default function GroupStage({ tournament, bracket, onChangeOrder, onToggl
     if (from < 0 || to < 0) return;
     onChangeOrder(letter, arrayMove(order, from, to));
   }
-
-  // The third-placed team predicted in each group (position 3).
-  const thirdCandidates = tournament.groups.map((g) => {
-    const order = groupOrderOf(bracket, g.letter, g.teams);
-    return { letter: g.letter, team: order[2] };
-  });
 
   return (
     <div className="space-y-6">

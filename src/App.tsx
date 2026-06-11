@@ -17,7 +17,7 @@ import {
   saveState,
 } from "./lib/storage";
 import BracketBar from "./components/BracketBar";
-import GroupStage from "./components/GroupStage";
+import GroupStage, { groupOrderOf } from "./components/GroupStage";
 import Knockout from "./components/Knockout";
 import Leaderboard from "./components/Leaderboard";
 import Results from "./components/Results";
@@ -155,14 +155,30 @@ export default function App() {
                   tournament={tournament}
                   bracket={active}
                   onChangeOrder={(letter, order) =>
-                    updateActive((b) => ({ ...b, groupOrder: { ...b.groupOrder, [letter]: order } }))
+                    updateActive((b) => {
+                      const teams = tournament.groups.find((g) => g.letter === letter)?.teams ?? order;
+                      const oldThird = groupOrderOf(b, letter, teams)[2];
+                      const newThird = order[2];
+                      let thirdPlaceTeams = b.thirdPlaceTeams;
+                      // Keep this group's third-place pick attached to whoever is now 3rd.
+                      if (oldThird !== newThird && thirdPlaceTeams.includes(oldThird)) {
+                        thirdPlaceTeams = thirdPlaceTeams.map((t) => (t === oldThird ? newThird : t));
+                      }
+                      return { ...b, groupOrder: { ...b.groupOrder, [letter]: order }, thirdPlaceTeams };
+                    })
                   }
                   onToggleThird={(team) =>
                     updateActive((b) => {
-                      const has = b.thirdPlaceTeams.includes(team);
-                      if (has) return { ...b, thirdPlaceTeams: b.thirdPlaceTeams.filter((t) => t !== team) };
-                      if (b.thirdPlaceTeams.length >= 8) return b;
-                      return { ...b, thirdPlaceTeams: [...b.thirdPlaceTeams, team] };
+                      // Only count picks that are still a group's predicted 3rd-place team.
+                      const valid = new Set(
+                        tournament.groups.map((g) => groupOrderOf(b, g.letter, g.teams)[2]),
+                      );
+                      const chosen = b.thirdPlaceTeams.filter((t) => valid.has(t));
+                      if (chosen.includes(team)) {
+                        return { ...b, thirdPlaceTeams: chosen.filter((t) => t !== team) };
+                      }
+                      if (chosen.length >= 8) return { ...b, thirdPlaceTeams: chosen };
+                      return { ...b, thirdPlaceTeams: [...chosen, team] };
                     })
                   }
                 />
