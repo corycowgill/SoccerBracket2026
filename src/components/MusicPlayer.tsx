@@ -1,7 +1,7 @@
 import { useEffect, useRef, useState } from "react";
 
-// The app looks for this file. Drop your MP3 at: public/music/theme.mp3
-const TRACK = `${import.meta.env.BASE_URL}music/theme.mp3`;
+// Background track served from public/music/ (copied to the site root at build).
+const TRACK = `${import.meta.env.BASE_URL}music/SoccerTheme1.mp3`;
 const STORAGE_KEY = "music-on";
 
 /** A small play/pause button for looping background music. */
