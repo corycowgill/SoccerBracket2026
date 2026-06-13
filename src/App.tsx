@@ -49,6 +49,25 @@ export default function App() {
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
 
+  // Keep results fresh automatically: refresh on a timer and when the user
+  // returns to the tab, but only if our data is more than ~90s old.
+  useEffect(() => {
+    function maybeRefresh() {
+      if (document.visibilityState !== "visible") return;
+      const age = feedState.fetchedAt ? Date.now() - feedState.fetchedAt : Infinity;
+      if (age > 90_000) void doRefresh();
+    }
+    window.addEventListener("focus", maybeRefresh);
+    document.addEventListener("visibilitychange", maybeRefresh);
+    const id = window.setInterval(maybeRefresh, 5 * 60_000);
+    return () => {
+      window.removeEventListener("focus", maybeRefresh);
+      document.removeEventListener("visibilitychange", maybeRefresh);
+      window.clearInterval(id);
+    };
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [feedState.fetchedAt]);
+
   const mergedFeed = useMemo(
     () => applyManualResults(feedState.data, manual),
     [feedState, manual],
