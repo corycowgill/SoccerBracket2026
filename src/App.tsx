@@ -25,6 +25,7 @@ import Leaderboard from "./components/Leaderboard";
 import Results from "./components/Results";
 import Rules from "./components/Rules";
 import Toast, { type ToastMessage } from "./components/Toast";
+import MusicPlayer from "./components/MusicPlayer";
 
 type Tab = "fill" | "leaderboard" | "results" | "rules";
 type FillTab = "groups" | "knockout";
@@ -169,9 +170,12 @@ export default function App() {
                 Family Bracket
               </span>
             </h1>
-            <span className="text-xs font-semibold text-white/80 hidden sm:block uppercase tracking-wide">
-              🇺🇸 USA · 🇨🇦 Canada · 🇲🇽 Mexico
-            </span>
+            <div className="flex items-center gap-3">
+              <span className="text-xs font-semibold text-white/80 hidden md:block uppercase tracking-wide">
+                🇺🇸 USA · 🇨🇦 Canada · 🇲🇽 Mexico
+              </span>
+              <MusicPlayer />
+            </div>
           </div>
           <nav className="flex gap-1 mt-3 overflow-x-auto">
             <TabButton active={tab === "fill"} onClick={() => setTab("fill")}>Fill Bracket</TabButton>
