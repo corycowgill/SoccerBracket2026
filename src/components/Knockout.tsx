@@ -1,12 +1,13 @@
 import { useMemo, useState } from "react";
 import type { Bracket, KnockoutRound, Tournament } from "../types";
 import { KNOCKOUT_ROUNDS } from "../types";
-import { resolvePredicted } from "../lib/standings";
+import { resolvePredicted, type ActualKnockout } from "../lib/standings";
 import TeamChip from "./TeamChip";
 
 interface Props {
   tournament: Tournament;
   bracket: Bracket;
+  actual: ActualKnockout;
   onPick: (matchNum: number, team: string) => void;
 }
 
@@ -19,7 +20,7 @@ const ROUND_LABEL: Record<KnockoutRound, string> = {
   Final: "Final",
 };
 
-export default function Knockout({ tournament, bracket, onPick }: Props) {
+export default function Knockout({ tournament, bracket, actual, onPick }: Props) {
   const resolved = useMemo(() => resolvePredicted(tournament, bracket), [tournament, bracket]);
   const [round, setRound] = useState<KnockoutRound>("Round of 32");
 
@@ -61,6 +62,12 @@ export default function Knockout({ tournament, bracket, onPick }: Props) {
             Round of 32 fills in.
           </p>
         )}
+        {(Object.keys(actual.winners).length > 0 || actual.eliminated.size > 0) && (
+          <p className="text-xs text-white/70 mt-2">
+            As real games finish: ✓ your pick advanced · <span className="line-through">faded</span>{" "}
+            teams are knocked out · ✗ means your pick is out.
+          </p>
+        )}
       </div>
 
       {/* Round selector */}
@@ -100,6 +107,7 @@ export default function Knockout({ tournament, bracket, onPick }: Props) {
               t1={t1}
               t2={t2}
               pick={pick}
+              actual={actual}
               onPick={(team) => onPick(km.num, team)}
             />
           );
@@ -132,43 +140,83 @@ interface MatchProps {
   t1: string;
   t2: string;
   pick?: string;
+  actual: ActualKnockout;
   onPick: (team: string) => void;
 }
 
-function MatchCard({ num, t1, t2, pick, onPick }: MatchProps) {
+function MatchCard({ num, t1, t2, pick, actual, onPick }: MatchProps) {
+  // Outcome of the user's pick once reality is known.
+  let outcome: "champion" | "advanced" | "out" | null = null;
+  if (pick) {
+    if (pick === actual.champion) outcome = "champion";
+    else if (actual.eliminated.has(pick)) outcome = "out";
+    else if (actual.winners[num] === pick) outcome = "advanced";
+  }
+
   return (
     <div className="rounded-xl border border-slate-200 bg-white overflow-hidden shadow-sm">
-      <TeamRow team={t1} picked={pick === t1 && !!t1} onPick={() => onPick(t1)} />
+      <TeamRow
+        team={t1}
+        picked={pick === t1 && !!t1}
+        eliminated={!!t1 && actual.eliminated.has(t1)}
+        outcome={pick === t1 ? outcome : null}
+        onPick={() => onPick(t1)}
+      />
       {/* center line / "vs" divider, like a scoreboard */}
       <div className="relative h-0 border-t border-slate-100">
         <span className="absolute left-1/2 top-1/2 -translate-x-1/2 -translate-y-1/2 bg-white text-[10px] font-bold text-slate-400 px-1.5 rounded-full border border-slate-200">
           vs
         </span>
       </div>
-      <TeamRow team={t2} picked={pick === t2 && !!t2} onPick={() => onPick(t2)} />
+      <TeamRow
+        team={t2}
+        picked={pick === t2 && !!t2}
+        eliminated={!!t2 && actual.eliminated.has(t2)}
+        outcome={pick === t2 ? outcome : null}
+        onPick={() => onPick(t2)}
+      />
       <div className="text-[10px] text-slate-300 text-right px-2 pb-0.5">Match #{num}</div>
     </div>
   );
 }
 
-function TeamRow({ team, picked, onPick }: { team: string; picked: boolean; onPick: () => void }) {
+function TeamRow({
+  team,
+  picked,
+  eliminated,
+  outcome,
+  onPick,
+}: {
+  team: string;
+  picked: boolean;
+  eliminated: boolean;
+  outcome: "champion" | "advanced" | "out" | null;
+  onPick: () => void;
+}) {
   const disabled = !team;
+  const bustedPick = picked && outcome === "out";
   return (
     <button
       disabled={disabled}
       onClick={onPick}
       className={`w-full flex items-center gap-2 px-3 py-3 text-left transition-colors min-h-[3rem] ${
-        picked ? "bg-pitch text-white" : disabled ? "bg-slate-50" : "hover:bg-green-50 active:bg-green-100"
+        bustedPick
+          ? "bg-red-50 text-red-700"
+          : picked
+            ? "bg-pitch text-white"
+            : disabled
+              ? "bg-slate-50"
+              : "hover:bg-green-50 active:bg-green-100"
       }`}
     >
-      <span className="flex-1 min-w-0">
+      <span className={`flex-1 min-w-0 ${eliminated && !picked ? "line-through opacity-50" : ""}`}>
         <TeamChip team={team} muted={!team} />
       </span>
-      {picked ? (
-        <span className="text-sm shrink-0">✓</span>
-      ) : (
-        !disabled && <span className="text-xs text-slate-300 shrink-0">tap to pick</span>
-      )}
+      {picked && outcome === "champion" && <span className="text-sm shrink-0">🏆</span>}
+      {picked && outcome === "advanced" && <span className="text-sm shrink-0">✓</span>}
+      {picked && outcome === "out" && <span className="text-xs font-bold shrink-0">✗ out</span>}
+      {picked && outcome === null && <span className="text-sm shrink-0">✓</span>}
+      {!picked && !disabled && <span className="text-xs text-slate-300 shrink-0">tap to pick</span>}
     </button>
   );
 }

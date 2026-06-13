@@ -2,7 +2,7 @@ import { describe, expect, it } from "vitest";
 import type { Bracket, FeedData, FeedMatch } from "../types";
 import { buildTournament } from "./feed";
 import { bundledFeed } from "./feedClient";
-import { allStandings, assignThirdPlace, resolvePredicted } from "./standings";
+import { actualKnockout, allStandings, assignThirdPlace, resolvePredicted } from "./standings";
 import { scoreBracket } from "./scoring";
 
 const tournament = buildTournament(bundledFeed());
@@ -111,6 +111,33 @@ describe("scoring", () => {
     const score = scoreBracket(tournament, feed, bracket);
     // champion(30) + finalists reaching the Final(18*?) -> at least the champion bonus.
     expect(score.breakdown.bonusPoints).toBeGreaterThanOrEqual(30);
+  });
+});
+
+describe("actual knockout outcomes", () => {
+  it("records the winner and eliminates the loser of a played knockout match", () => {
+    let feed = bundledFeed();
+    // Force match #73's two teams to real names with a result.
+    feed = {
+      ...feed,
+      matches: feed.matches.map((m) =>
+        m.num === 73
+          ? { ...m, team1: "Brazil", team2: "France", score: { ft: [2, 1] as [number, number] } }
+          : m,
+      ),
+    };
+    const a = actualKnockout(feed);
+    expect(a.winners[73]).toBe("Brazil");
+    expect(a.eliminated.has("France")).toBe(true);
+    expect(a.eliminated.has("Brazil")).toBe(false);
+  });
+
+  it("crowns the champion from the final", () => {
+    let feed = bundledFeed();
+    feed = setFinal(feed, "Argentina", "Spain", 3, 1);
+    const a = actualKnockout(feed);
+    expect(a.champion).toBe("Argentina");
+    expect(a.eliminated.has("Spain")).toBe(true);
   });
 });
 

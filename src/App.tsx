@@ -1,6 +1,7 @@
 import { useEffect, useMemo, useState } from "react";
 import type { Bracket } from "./types";
 import { buildTournament } from "./lib/feed";
+import { actualKnockout } from "./lib/standings";
 import { bundledFeed, loadCachedFeed, refreshFeed, type FeedState } from "./lib/feedClient";
 import {
   applyManualResults,
@@ -52,6 +53,7 @@ export default function App() {
     () => applyManualResults(feedState.data, manual),
     [feedState, manual],
   );
+  const actualKO = useMemo(() => actualKnockout(mergedFeed), [mergedFeed]);
 
   const active = brackets.find((b) => b.id === activeId) ?? null;
 
@@ -209,6 +211,7 @@ export default function App() {
                 <Knockout
                   tournament={tournament}
                   bracket={active}
+                  actual={actualKO}
                   onPick={(num, team) =>
                     updateActive((b) => ({ ...b, knockoutPick: { ...b.knockoutPick, [num]: team } }))
                   }

@@ -213,6 +213,37 @@ function isRealTeam(name: string): boolean {
   return !/^([12][A-L]|W\d+|L\d+|3[A-L](\/[A-L])+)$/i.test(name.trim());
 }
 
+/** Actual knockout outcomes from the feed: per-match winners, eliminated teams, champion. */
+export interface ActualKnockout {
+  winners: Record<number, string>; // match num -> winning team (played matches only)
+  eliminated: Set<string>; // teams knocked out of the tournament
+  champion?: string;
+}
+
+export function actualKnockout(feed: FeedData): ActualKnockout {
+  const winners: Record<number, string> = {};
+  const eliminated = new Set<string>();
+  let champion: string | undefined;
+
+  for (const m of feed.matches) {
+    if (!KNOCKOUT_ROUNDS.includes(m.round as KnockoutRound)) continue;
+    if (!isPlayed(m)) continue;
+    const w = matchWinnerIndex(m.score);
+    if (w === null) continue;
+    const num =
+      m.num ??
+      (m.round === "Final" ? 104 : m.round === "Match for third place" ? 103 : undefined);
+    const winner = w === 0 ? m.team1 : m.team2;
+    const loser = w === 0 ? m.team2 : m.team1;
+    if (num !== undefined && isRealTeam(winner)) winners[num] = winner;
+    // The third-place play-off loser is already out; either way the loser is eliminated.
+    if (isRealTeam(loser)) eliminated.add(loser);
+    if (num === 104 && isRealTeam(winner)) champion = winner;
+  }
+  return { winners, eliminated, champion };
+}
+
+
 // ---------------------------------------------------------------------------
 // Predicted bracket resolution
 // ---------------------------------------------------------------------------
