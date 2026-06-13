@@ -6,16 +6,17 @@
   body {
     @apply text-slate-900 font-display antialiased;
     min-height: 100vh;
-    /* Mowed-grass pitch: alternating green stripes with a subtle top shade. */
-    background-color: #15803d;
+    /* Stadium-lit pitch: a soft top glow, a depth vignette, and mowed stripes. */
+    background-color: #14732f;
     background-image:
-      linear-gradient(180deg, rgba(0, 0, 0, 0.18), rgba(0, 0, 0, 0) 220px),
+      radial-gradient(1100px 480px at 50% -180px, rgba(255, 255, 255, 0.22), rgba(255, 255, 255, 0) 60%),
+      linear-gradient(180deg, rgba(0, 0, 0, 0.22), rgba(0, 0, 0, 0) 260px),
       repeating-linear-gradient(
         90deg,
         #15803d 0,
         #15803d 64px,
-        #18863f 64px,
-        #18863f 128px
+        #178a41 64px,
+        #178a41 128px
       );
     background-attachment: fixed;
   }
@@ -23,38 +24,99 @@
 
 @layer components {
   .tab-btn {
-    @apply px-3 py-2 rounded-lg text-sm font-semibold transition-colors whitespace-nowrap;
+    @apply px-3 py-2 rounded-lg text-sm font-semibold transition-all whitespace-nowrap;
   }
   .tab-btn-active {
-    @apply bg-white text-pitch-dark shadow;
+    @apply bg-white text-pitch-dark shadow-md;
   }
   .tab-btn-idle {
-    @apply text-white/90 hover:bg-white/10;
+    @apply text-white/90 hover:bg-white/15;
   }
   .card {
-    @apply bg-white rounded-xl shadow-md border border-slate-200/70 p-4;
+    @apply bg-white rounded-2xl border border-white/60 p-4;
+    box-shadow:
+      0 10px 25px -14px rgba(0, 0, 0, 0.4),
+      0 2px 6px -2px rgba(0, 0, 0, 0.12);
   }
-  /* A dark "pitch" panel with faint mowed stripes, for section headers. */
+  /* A dark "pitch" panel: diagonal green depth, top sheen, faint mowed stripes. */
   .pitch-panel {
-    @apply rounded-xl shadow-md p-4 text-white;
+    @apply rounded-2xl shadow-lg p-4 text-white;
     background-color: #166534;
     background-image:
       repeating-linear-gradient(
         90deg,
         rgba(255, 255, 255, 0.05) 0,
-        rgba(255, 255, 255, 0.05) 32px,
-        rgba(255, 255, 255, 0.1) 32px,
-        rgba(255, 255, 255, 0.1) 64px
+        rgba(255, 255, 255, 0.05) 30px,
+        rgba(255, 255, 255, 0.1) 30px,
+        rgba(255, 255, 255, 0.1) 60px
       ),
-      linear-gradient(135deg, rgba(0, 0, 0, 0.18), rgba(0, 0, 0, 0));
+      radial-gradient(120% 150% at 100% 0%, rgba(255, 255, 255, 0.16), rgba(255, 255, 255, 0) 55%),
+      linear-gradient(135deg, #14532d 0%, #166534 60%, #15803d 100%);
   }
   .btn {
-    @apply inline-flex items-center gap-2 px-3 py-2 rounded-lg font-semibold text-sm transition-colors disabled:opacity-50 disabled:cursor-not-allowed;
+    @apply inline-flex items-center gap-2 px-3 py-2 rounded-lg font-semibold text-sm transition-all disabled:opacity-50 disabled:cursor-not-allowed;
   }
   .btn-primary {
-    @apply btn bg-pitch text-white hover:bg-pitch-dark shadow;
+    @apply btn text-white shadow;
+    background-image: linear-gradient(180deg, #1aa34a, #15803d);
+  }
+  .btn-primary:hover:not(:disabled) {
+    background-image: linear-gradient(180deg, #15803d, #166534);
+  }
+  .btn-primary:active:not(:disabled) {
+    transform: scale(0.98);
   }
   .btn-ghost {
     @apply btn bg-slate-100 text-slate-700 hover:bg-slate-200;
+  }
+}
+
+/* ---- Motion (kept subtle; respects reduced-motion) ---- */
+@keyframes fadeUp {
+  from {
+    opacity: 0;
+    transform: translateY(10px);
+  }
+  to {
+    opacity: 1;
+    transform: none;
+  }
+}
+.animate-fade-up {
+  animation: fadeUp 0.35s ease-out both;
+}
+
+@keyframes trophyBounce {
+  0%,
+  100% {
+    transform: translateY(0) rotate(-3deg);
+  }
+  50% {
+    transform: translateY(-7px) rotate(3deg);
+  }
+}
+.animate-trophy {
+  animation: trophyBounce 1.8s ease-in-out infinite;
+  display: inline-block;
+}
+
+@keyframes goldGlow {
+  0%,
+  100% {
+    box-shadow: 0 0 0 0 rgba(245, 200, 66, 0);
+  }
+  50% {
+    box-shadow: 0 0 34px 2px rgba(245, 200, 66, 0.55);
+  }
+}
+.animate-glow {
+  animation: goldGlow 2.4s ease-in-out infinite;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .animate-fade-up,
+  .animate-trophy,
+  .animate-glow {
+    animation: none;
   }
 }

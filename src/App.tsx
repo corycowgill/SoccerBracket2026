@@ -145,12 +145,29 @@ export default function App() {
 
   return (
     <div className="min-h-screen flex flex-col">
-      <header className="bg-gradient-to-b from-pitch-dark to-pitch text-white shadow-lg border-b-4 border-white/80">
-        <div className="max-w-6xl mx-auto px-4 py-3">
+      <header className="relative overflow-hidden bg-gradient-to-b from-pitch-dark to-pitch text-white shadow-lg border-b-4 border-white/80">
+        {/* faint pitch markings */}
+        <svg
+          className="absolute inset-0 w-full h-full opacity-[0.13] pointer-events-none"
+          preserveAspectRatio="none"
+          viewBox="0 0 100 100"
+          aria-hidden="true"
+        >
+          <rect x="1" y="1" width="98" height="98" fill="none" stroke="white" strokeWidth="0.4" />
+          <line x1="50" y1="0" x2="50" y2="100" stroke="white" strokeWidth="0.4" />
+          <circle cx="50" cy="50" r="14" fill="none" stroke="white" strokeWidth="0.4" />
+          <circle cx="50" cy="50" r="1" fill="white" />
+        </svg>
+        <div className="relative max-w-6xl mx-auto px-4 py-3">
           <div className="flex items-center justify-between gap-3">
-            <h1 className="text-xl font-extrabold tracking-tight flex items-center gap-2">
-              <span className="text-2xl">⚽</span> World Cup 2026
-              <span className="hidden sm:inline font-semibold text-white/80">Family Bracket</span>
+            <h1 className="text-2xl font-extrabold tracking-tight flex items-center gap-2 drop-shadow">
+              <span className="text-2xl animate-trophy">⚽</span>
+              <span>
+                World Cup <span className="text-amber-300">2026</span>
+              </span>
+              <span className="hidden sm:inline text-base font-semibold text-white/70">
+                Family Bracket
+              </span>
             </h1>
             <span className="text-xs font-semibold text-white/80 hidden sm:block uppercase tracking-wide">
               🇺🇸 USA · 🇨🇦 Canada · 🇲🇽 Mexico
@@ -178,6 +195,7 @@ export default function App() {
           onImport={handleImport}
         />
 
+        <div key={tab} className="animate-fade-up space-y-4">
         {tab === "fill" &&
           (active ? (
             <>
@@ -271,6 +289,7 @@ export default function App() {
         )}
 
         {tab === "rules" && <Rules />}
+        </div>
       </main>
 
       <footer className="text-center text-xs text-white/70 py-4">

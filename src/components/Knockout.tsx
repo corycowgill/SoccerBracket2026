@@ -124,10 +124,13 @@ export default function Knockout({ tournament, bracket, actual, onPick }: Props)
       )}
 
       {resolved.champion && (
-        <div className="card text-center bg-gradient-to-br from-yellow-50 to-amber-100 border-amber-300">
-          <p className="text-sm font-semibold text-amber-700">Your predicted champion</p>
-          <div className="text-2xl font-bold mt-1 flex items-center justify-center gap-2">
-            🏆 <TeamChip team={resolved.champion} />
+        <div className="card text-center bg-gradient-to-br from-yellow-50 via-amber-50 to-amber-100 border-amber-300 animate-glow">
+          <p className="text-xs font-bold uppercase tracking-wide text-amber-600">
+            Your predicted champion
+          </p>
+          <div className="text-3xl mt-1 animate-trophy">🏆</div>
+          <div className="text-2xl font-extrabold mt-1 flex items-center justify-center gap-2">
+            <TeamChip team={resolved.champion} />
           </div>
         </div>
       )}
