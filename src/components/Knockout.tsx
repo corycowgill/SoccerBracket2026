@@ -1,4 +1,4 @@
-import { useMemo } from "react";
+import { useMemo, useState } from "react";
 import type { Bracket, KnockoutRound, Tournament } from "../types";
 import { KNOCKOUT_ROUNDS } from "../types";
 import { resolvePredicted } from "../lib/standings";
@@ -10,8 +10,18 @@ interface Props {
   onPick: (matchNum: number, team: string) => void;
 }
 
+const ROUND_LABEL: Record<KnockoutRound, string> = {
+  "Round of 32": "Round of 32",
+  "Round of 16": "Round of 16",
+  "Quarter-final": "Quarters",
+  "Semi-final": "Semis",
+  "Match for third place": "3rd place",
+  Final: "Final",
+};
+
 export default function Knockout({ tournament, bracket, onPick }: Props) {
   const resolved = useMemo(() => resolvePredicted(tournament, bracket), [tournament, bracket]);
+  const [round, setRound] = useState<KnockoutRound>("Round of 32");
 
   const byRound = useMemo(() => {
     const map = {} as Record<KnockoutRound, typeof tournament.knockout>;
@@ -23,54 +33,87 @@ export default function Knockout({ tournament, bracket, onPick }: Props) {
 
   const ready = bracket.thirdPlaceTeams.length === 8;
 
+  function picksInRound(r: KnockoutRound): { done: number; total: number } {
+    const matches = byRound[r];
+    let done = 0;
+    for (const km of matches) {
+      const [t1, t2] = resolved.matchups[km.num] ?? ["", ""];
+      const pick = bracket.knockoutPick[km.num];
+      if (pick && (pick === t1 || pick === t2)) done++;
+    }
+    return { done, total: matches.length };
+  }
+
+  const roundIdx = KNOCKOUT_ROUNDS.indexOf(round);
+  const nextRound = KNOCKOUT_ROUNDS[roundIdx + 1];
+  const current = picksInRound(round);
+
   return (
     <div className="space-y-4">
       <div className="card bg-pitch-dark text-white">
         <h2 className="text-lg font-bold">Step 3 · Fill the knockout bracket</h2>
         <p className="text-sm text-white/80 mt-1">
-          Click the team you think wins each match. Your picks flow forward automatically all
-          the way to the Final. 🏆
+          Tap the team you think wins each match. Your picks flow forward automatically. 🏆
         </p>
         {!ready && (
           <p className="text-sm bg-amber-400/20 text-amber-100 rounded px-2 py-1 mt-2">
-            Finish Step 1 &amp; 2 first (set every group's order and pick 8 third-place teams) so the
+            Finish Steps 1 &amp; 2 first (order every group and pick 8 third-place teams) so the
             Round of 32 fills in.
           </p>
         )}
       </div>
 
-      <div className="overflow-x-auto pb-4">
-        <div className="flex gap-4 min-w-max">
-          {KNOCKOUT_ROUNDS.filter((r) => r !== "Match for third place").map((round) => (
-            <div key={round} className="flex flex-col gap-3 w-60">
-              <h3 className="text-sm font-bold text-pitch-dark text-center sticky top-0">{round}</h3>
-              {byRound[round].map((km) => {
-                const [t1, t2] = resolved.matchups[km.num] ?? ["", ""];
-                const pick = bracket.knockoutPick[km.num];
-                return (
-                  <MatchCard
-                    key={km.num}
-                    num={km.num}
-                    t1={t1}
-                    t2={t2}
-                    pick={pick}
-                    onPick={(team) => onPick(km.num, team)}
-                  />
-                );
-              })}
-              {round === "Final" && (
-                <ThirdPlaceCard
-                  km={byRound["Match for third place"][0]}
-                  t1={resolved.matchups[103]?.[0] ?? ""}
-                  t2={resolved.matchups[103]?.[1] ?? ""}
-                  pick={bracket.knockoutPick[103]}
-                  onPick={onPick}
-                />
-              )}
-            </div>
-          ))}
-        </div>
+      {/* Round selector */}
+      <div className="flex gap-2 overflow-x-auto pb-1 -mx-1 px-1">
+        {KNOCKOUT_ROUNDS.map((r) => {
+          const { done, total } = picksInRound(r);
+          const complete = done === total && total > 0;
+          const isActive = r === round;
+          return (
+            <button
+              key={r}
+              onClick={() => setRound(r)}
+              className={`shrink-0 flex flex-col items-center rounded-lg px-3 py-1.5 border text-xs font-semibold transition-colors ${
+                isActive
+                  ? "bg-pitch text-white border-pitch"
+                  : "bg-white text-slate-600 border-slate-200 hover:border-pitch"
+              }`}
+            >
+              <span>{ROUND_LABEL[r]}</span>
+              <span className={`text-[10px] ${isActive ? "text-white/80" : complete ? "text-green-600" : "text-slate-400"}`}>
+                {complete ? "✓ done" : `${done}/${total}`}
+              </span>
+            </button>
+          );
+        })}
       </div>
+
+      {/* Matches for the selected round */}
+      <div className="grid gap-3 sm:grid-cols-2 lg:grid-cols-3">
+        {byRound[round].map((km) => {
+          const [t1, t2] = resolved.matchups[km.num] ?? ["", ""];
+          const pick = bracket.knockoutPick[km.num];
+          return (
+            <MatchCard
+              key={km.num}
+              num={km.num}
+              t1={t1}
+              t2={t2}
+              pick={pick}
+              onPick={(team) => onPick(km.num, team)}
+            />
+          );
+        })}
+      </div>
+
+      {/* Move to next round */}
+      {nextRound && (
+        <div className="flex justify-end">
+          <button className="btn-primary" onClick={() => setRound(nextRound)}>
+            {current.done === current.total ? `Next: ${ROUND_LABEL[nextRound]} →` : `Skip to ${ROUND_LABEL[nextRound]} →`}
+          </button>
+        </div>
+      )}
 
       {resolved.champion && (
         <div className="card text-center bg-gradient-to-br from-yellow-50 to-amber-100 border-amber-300">
@@ -94,7 +137,7 @@ interface MatchProps {
 
 function MatchCard({ num, t1, t2, pick, onPick }: MatchProps) {
   return (
-    <div className="rounded-lg border border-slate-200 bg-white overflow-hidden">
+    <div className="rounded-xl border border-slate-200 bg-white overflow-hidden shadow-sm">
       {[t1, t2].map((team, i) => {
         const picked = pick && team && pick === team;
         const disabled = !team;
@@ -103,40 +146,22 @@ function MatchCard({ num, t1, t2, pick, onPick }: MatchProps) {
             key={i}
             disabled={disabled}
             onClick={() => onPick(team)}
-            className={`w-full flex items-center gap-2 px-2.5 py-2 text-left border-b last:border-b-0 border-slate-100 transition-colors ${
-              picked ? "bg-pitch text-white" : disabled ? "bg-slate-50" : "hover:bg-green-50"
+            className={`w-full flex items-center gap-2 px-3 py-3 text-left border-b last:border-b-0 border-slate-100 transition-colors min-h-[3rem] ${
+              picked ? "bg-pitch text-white" : disabled ? "bg-slate-50" : "hover:bg-green-50 active:bg-green-100"
             }`}
           >
             <span className="flex-1 min-w-0">
-              <TeamChip team={team} size="sm" muted={!team} />
+              <TeamChip team={team} muted={!team} />
             </span>
-            {picked && <span className="text-xs">✓</span>}
+            {picked ? (
+              <span className="text-sm shrink-0">✓</span>
+            ) : (
+              !disabled && <span className="text-xs text-slate-300 shrink-0">tap to pick</span>
+            )}
           </button>
         );
       })}
-      <div className="text-[10px] text-slate-300 text-right px-2 pb-0.5">#{num}</div>
-    </div>
-  );
-}
-
-function ThirdPlaceCard({
-  km,
-  t1,
-  t2,
-  pick,
-  onPick,
-}: {
-  km: Tournament["knockout"][number] | undefined;
-  t1: string;
-  t2: string;
-  pick?: string;
-  onPick: (matchNum: number, team: string) => void;
-}) {
-  if (!km) return null;
-  return (
-    <div className="mt-4">
-      <h3 className="text-xs font-bold text-slate-400 text-center mb-1">Third-place play-off</h3>
-      <MatchCard num={km.num} t1={t1} t2={t2} pick={pick} onPick={(team) => onPick(km.num, team)} />
+      <div className="text-[10px] text-slate-300 text-right px-2 pb-0.5">Match #{num}</div>
     </div>
   );
 }

@@ -23,6 +23,7 @@ import ProgressPanel from "./components/ProgressPanel";
 import Leaderboard from "./components/Leaderboard";
 import Results from "./components/Results";
 import Rules from "./components/Rules";
+import Toast, { type ToastMessage } from "./components/Toast";
 
 type Tab = "fill" | "leaderboard" | "results" | "rules";
 type FillTab = "groups" | "knockout";
@@ -39,6 +40,7 @@ export default function App() {
   const [refreshing, setRefreshing] = useState(false);
   const [tab, setTab] = useState<Tab>("fill");
   const [fillTab, setFillTab] = useState<FillTab>("groups");
+  const [toast, setToast] = useState<ToastMessage | null>(null);
 
   // Try a live refresh on first load (silently falls back to cache/bundled).
   useEffect(() => {
@@ -65,11 +67,18 @@ export default function App() {
     persist(next);
   }
 
-  async function doRefresh() {
+  async function doRefresh(notify = false) {
     setRefreshing(true);
     const state = await refreshFeed();
     setFeedState(state);
     setRefreshing(false);
+    if (notify) {
+      setToast(
+        state.source === "live"
+          ? { text: "Results updated from the internet ✓", kind: "success" }
+          : { text: "Couldn't reach the live feed — showing saved results.", kind: "error" },
+      );
+    }
   }
 
   function setManualResult(key: string, result: ManualResult | null) {
@@ -103,9 +112,12 @@ export default function App() {
       const merged = [...byId.values()];
       persist(merged);
       setActiveId(imported[0]?.id ?? activeId);
-      alert(`Imported ${imported.length} bracket(s).`);
+      setToast({ text: `Imported ${imported.length} bracket(s) ✓`, kind: "success" });
     } catch (err) {
-      alert(err instanceof Error ? err.message : "Could not import that file.");
+      setToast({
+        text: err instanceof Error ? err.message : "Could not import that file.",
+        kind: "error",
+      });
     }
   }
 
@@ -226,7 +238,7 @@ export default function App() {
             feedState={feedState}
             manual={manual}
             refreshing={refreshing}
-            onRefresh={doRefresh}
+            onRefresh={() => doRefresh(true)}
             onSetManual={setManualResult}
           />
         )}
@@ -237,6 +249,8 @@ export default function App() {
       <footer className="text-center text-xs text-slate-400 py-4">
         Built for family fun · results from openfootball · brackets saved on this device
       </footer>
+
+      <Toast toast={toast} onDismiss={() => setToast(null)} />
     </div>
   );
 }
