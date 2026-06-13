@@ -1,4 +1,4 @@
-import { useRef, useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import type { Bracket, Tournament } from "../types";
 import { bracketProgress } from "../lib/progress";
 
@@ -27,8 +27,23 @@ export default function BracketBar({
   onImport,
 }: Props) {
   const [newName, setNewName] = useState("");
+  const [editing, setEditing] = useState(false);
+  const [editValue, setEditValue] = useState("");
+  const [confirmDelete, setConfirmDelete] = useState(false);
   const fileRef = useRef<HTMLInputElement>(null);
   const active = brackets.find((b) => b.id === activeId);
+
+  // Reset inline rename/delete state when the selected player changes.
+  useEffect(() => {
+    setEditing(false);
+    setConfirmDelete(false);
+  }, [activeId]);
+
+  function saveRename() {
+    const n = editValue.trim();
+    if (n && activeId) onRename(activeId, n);
+    setEditing(false);
+  }
 
   function handleAdd() {
     const name = newName.trim();
@@ -99,27 +114,58 @@ export default function BracketBar({
 
         <div className="flex-1" />
 
-        {active && (
-          <>
-            <button
-              className="btn-ghost"
-              onClick={() => {
-                const name = prompt("Rename bracket", active.name);
-                if (name) onRename(active.id, name);
-              }}
-            >
-              Rename
-            </button>
-            <button
-              className="btn-ghost text-red-600"
-              onClick={() => {
-                if (confirm(`Delete ${active.name}'s bracket?`)) onDelete(active.id);
-              }}
-            >
-              Delete
-            </button>
-          </>
-        )}
+        {active &&
+          (editing ? (
+            <span className="flex items-center gap-1">
+              <input
+                autoFocus
+                value={editValue}
+                onChange={(e) => setEditValue(e.target.value)}
+                onKeyDown={(e) => {
+                  if (e.key === "Enter") saveRename();
+                  if (e.key === "Escape") setEditing(false);
+                }}
+                className="px-2 py-1.5 rounded-lg border border-slate-300 text-sm w-32 focus:outline-none focus:ring-2 focus:ring-pitch"
+              />
+              <button className="btn-primary" onClick={saveRename}>
+                Save
+              </button>
+              <button className="btn-ghost" onClick={() => setEditing(false)}>
+                Cancel
+              </button>
+            </span>
+          ) : confirmDelete ? (
+            <span className="flex items-center gap-1">
+              <span className="text-sm text-slate-600">Delete {active.name}?</span>
+              <button
+                className="btn bg-red-600 text-white hover:bg-red-700"
+                onClick={() => {
+                  onDelete(active.id);
+                  setConfirmDelete(false);
+                }}
+              >
+                Yes, delete
+              </button>
+              <button className="btn-ghost" onClick={() => setConfirmDelete(false)}>
+                Cancel
+              </button>
+            </span>
+          ) : (
+            <>
+              <button
+                className="btn-ghost"
+                onClick={() => {
+                  setEditValue(active.name);
+                  setEditing(true);
+                }}
+              >
+                Rename
+              </button>
+              <button className="btn-ghost text-red-600" onClick={() => setConfirmDelete(true)}>
+                Delete
+              </button>
+            </>
+          ))}
         <button className="btn-ghost" onClick={onExport} title="Download a backup of all brackets">
           ⬇︎ Export
         </button>

@@ -1,5 +1,7 @@
+import { useEffect, useRef } from "react";
 import type { Bracket, Tournament } from "../types";
 import { bracketProgress } from "../lib/progress";
+import { celebrate } from "../lib/confetti";
 import TeamChip from "./TeamChip";
 
 interface Props {
@@ -11,6 +13,20 @@ interface Props {
 
 export default function ProgressPanel({ tournament, bracket, fillTab, onGoTo }: Props) {
   const p = bracketProgress(tournament, bracket);
+
+  // Celebrate the moment a bracket is finished — only on the actual transition,
+  // not when switching to a bracket that was already complete.
+  const lastId = useRef(bracket.id);
+  const wasComplete = useRef(p.complete);
+  useEffect(() => {
+    if (bracket.id !== lastId.current) {
+      lastId.current = bracket.id;
+      wasComplete.current = p.complete;
+      return;
+    }
+    if (p.complete && !wasComplete.current) celebrate();
+    wasComplete.current = p.complete;
+  }, [p.complete, bracket.id]);
 
   return (
     <div className="card">
