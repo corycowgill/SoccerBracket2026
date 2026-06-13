@@ -1,7 +1,9 @@
 import { useRef, useState } from "react";
-import type { Bracket } from "../types";
+import type { Bracket, Tournament } from "../types";
+import { bracketProgress } from "../lib/progress";
 
 interface Props {
+  tournament: Tournament;
   brackets: Bracket[];
   activeId: string | null;
   onSelect: (id: string) => void;
@@ -14,6 +16,7 @@ interface Props {
 
 /** Persistent bar to pick / add / manage the family member whose bracket is shown. */
 export default function BracketBar({
+  tournament,
   brackets,
   activeId,
   onSelect,
@@ -50,19 +53,36 @@ export default function BracketBar({
         {brackets.length === 0 && (
           <span className="text-sm text-slate-400">No brackets yet — add a family member →</span>
         )}
-        {brackets.map((b) => (
-          <button
-            key={b.id}
-            onClick={() => onSelect(b.id)}
-            className={`px-3 py-1.5 rounded-full text-sm font-semibold border transition-colors ${
-              b.id === activeId
-                ? "bg-pitch text-white border-pitch"
-                : "bg-white text-slate-700 border-slate-300 hover:border-pitch"
-            }`}
-          >
-            {b.name}
-          </button>
-        ))}
+        {brackets.map((b) => {
+          const p = bracketProgress(tournament, b);
+          return (
+            <button
+              key={b.id}
+              onClick={() => onSelect(b.id)}
+              className={`flex items-center gap-1.5 px-3 py-1.5 rounded-full text-sm font-semibold border transition-colors ${
+                b.id === activeId
+                  ? "bg-pitch text-white border-pitch"
+                  : "bg-white text-slate-700 border-slate-300 hover:border-pitch"
+              }`}
+              title={`${p.percent}% complete`}
+            >
+              {b.name}
+              <span
+                className={`text-[10px] font-bold rounded-full px-1.5 py-0.5 leading-none ${
+                  p.complete
+                    ? b.id === activeId
+                      ? "bg-white/25 text-white"
+                      : "bg-green-100 text-green-700"
+                    : b.id === activeId
+                      ? "bg-white/25 text-white"
+                      : "bg-slate-100 text-slate-500"
+                }`}
+              >
+                {p.complete ? "✓" : `${p.percent}%`}
+              </span>
+            </button>
+          );
+        })}
       </div>
 
       <div className="flex flex-wrap items-center gap-2">

@@ -19,6 +19,7 @@ import {
 import BracketBar from "./components/BracketBar";
 import GroupStage, { groupOrderOf } from "./components/GroupStage";
 import Knockout from "./components/Knockout";
+import ProgressPanel from "./components/ProgressPanel";
 import Leaderboard from "./components/Leaderboard";
 import Results from "./components/Results";
 import Rules from "./components/Rules";
@@ -129,6 +130,7 @@ export default function App() {
 
       <main className="flex-1 max-w-6xl w-full mx-auto px-4 py-4 space-y-4">
         <BracketBar
+          tournament={tournament}
           brackets={brackets}
           activeId={activeId}
           onSelect={setActiveId}
@@ -142,6 +144,12 @@ export default function App() {
         {tab === "fill" &&
           (active ? (
             <>
+              <ProgressPanel
+                tournament={tournament}
+                bracket={active}
+                fillTab={fillTab}
+                onGoTo={setFillTab}
+              />
               <div className="flex gap-2">
                 <SubTab active={fillTab === "groups"} onClick={() => setFillTab("groups")}>
                   1–2. Groups
@@ -193,8 +201,16 @@ export default function App() {
               )}
             </>
           ) : (
-            <div className="card text-center text-slate-500">
-              Add a family member above to start filling out a bracket. 👆
+            <div className="card text-center py-10">
+              <div className="text-5xl mb-2">⚽🏆</div>
+              <h2 className="text-xl font-bold text-pitch-dark">Let's build some brackets!</h2>
+              <p className="text-slate-500 mt-1 max-w-md mx-auto">
+                Add each family member using the <strong>“+ Add player”</strong> box above, then pick
+                your way through the groups and knockouts to crown your champion.
+              </p>
+              <p className="text-slate-400 text-sm mt-3">
+                New to the World Cup? Tap <strong>“How it works”</strong> up top for a quick guide.
+              </p>
             </div>
           ))}
 
