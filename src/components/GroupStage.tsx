@@ -15,12 +15,13 @@ import {
   verticalListSortingStrategy,
 } from "@dnd-kit/sortable";
 import { CSS } from "@dnd-kit/utilities";
-import type { Bracket, Tournament } from "../types";
+import type { Bracket, StandingRow, Tournament } from "../types";
 import TeamChip from "./TeamChip";
 
 interface Props {
   tournament: Tournament;
   bracket: Bracket;
+  standings: Record<string, StandingRow[]>;
   onChangeOrder: (letter: string, order: string[]) => void;
   onToggleThird: (team: string) => void;
 }
@@ -33,13 +34,26 @@ const POS_STYLE = [
   "bg-slate-100 text-slate-500",
 ];
 
+const LIVE_STYLE = [
+  "text-green-600",
+  "text-green-600",
+  "text-amber-600",
+  "text-slate-400",
+];
+
 export function groupOrderOf(bracket: Bracket, letter: string, teams: string[]): string[] {
   const saved = bracket.groupOrder[letter];
   if (saved && saved.length === teams.length) return saved;
   return [...teams];
 }
 
-export default function GroupStage({ tournament, bracket, onChangeOrder, onToggleThird }: Props) {
+export default function GroupStage({
+  tournament,
+  bracket,
+  standings,
+  onChangeOrder,
+  onToggleThird,
+}: Props) {
   // The third-placed team predicted in each group (position 3) — the only valid picks.
   const thirdCandidates = tournament.groups.map((g) => {
     const order = groupOrderOf(bracket, g.letter, g.teams);
@@ -79,12 +93,16 @@ export default function GroupStage({ tournament, bracket, onChangeOrder, onToggl
         <p className="text-sm text-white/80 mt-1">
           Put each group in the order you think it will finish. The top 2 of every group go
           through automatically. <strong>Drag the ⠿ handle</strong> to reorder, or use the arrows.
+          Once games are played, each team shows its <strong>live position</strong> in the real table.
         </p>
       </div>
 
       <div className="grid gap-4 md:grid-cols-2 xl:grid-cols-3">
         {tournament.groups.map((g) => {
           const order = groupOrderOf(bracket, g.letter, g.teams);
+          const rows = standings[g.letter] ?? [];
+          const byTeam = new Map(rows.map((r) => [r.team, r]));
+          const groupPlayed = rows.some((r) => r.played > 0);
           return (
             <div key={g.letter} className="card">
               <h3 className="font-bold text-pitch-dark mb-2">Group {g.letter}</h3>
@@ -101,6 +119,7 @@ export default function GroupStage({ tournament, bracket, onChangeOrder, onToggl
                         team={team}
                         idx={idx}
                         last={idx === order.length - 1}
+                        liveRank={groupPlayed ? byTeam.get(team)?.rank : undefined}
                         onUp={() => move(g.letter, order, idx, -1)}
                         onDown={() => move(g.letter, order, idx, 1)}
                       />
@@ -155,11 +174,12 @@ interface RowProps {
   team: string;
   idx: number;
   last: boolean;
+  liveRank?: number;
   onUp: () => void;
   onDown: () => void;
 }
 
-function SortableTeamRow({ team, idx, last, onUp, onDown }: RowProps) {
+function SortableTeamRow({ team, idx, last, liveRank, onUp, onDown }: RowProps) {
   const { attributes, listeners, setNodeRef, transform, transition, isDragging } = useSortable({
     id: team,
   });
@@ -191,9 +211,17 @@ function SortableTeamRow({ team, idx, last, onUp, onDown }: RowProps) {
       <span className={`text-xs font-bold px-2 py-0.5 rounded ${POS_STYLE[idx]}`}>
         {POS_LABEL[idx]}
       </span>
-      <span className="flex-1 min-w-0">
+      <span className={`flex-1 min-w-0 ${liveRank === 4 ? "opacity-60" : ""}`}>
         <TeamChip team={team} size="sm" />
       </span>
+      {liveRank !== undefined && (
+        <span
+          className={`text-[10px] font-bold whitespace-nowrap ${LIVE_STYLE[liveRank - 1]}`}
+          title="Current actual position in the real group table"
+        >
+          ● now {POS_LABEL[liveRank - 1]}
+        </span>
+      )}
       <span className="flex flex-col">
         <button
           className="text-slate-400 hover:text-pitch leading-none disabled:opacity-30"
