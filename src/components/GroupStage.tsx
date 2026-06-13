@@ -74,7 +74,7 @@ export default function GroupStage({ tournament, bracket, onChangeOrder, onToggl
 
   return (
     <div className="space-y-6">
-      <div className="card bg-pitch-dark text-white">
+      <div className="pitch-panel">
         <h2 className="text-lg font-bold">Step 1 · Predict the group stage</h2>
         <p className="text-sm text-white/80 mt-1">
           Put each group in the order you think it will finish. The top 2 of every group go

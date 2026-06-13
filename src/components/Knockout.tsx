@@ -50,7 +50,7 @@ export default function Knockout({ tournament, bracket, onPick }: Props) {
 
   return (
     <div className="space-y-4">
-      <div className="card bg-pitch-dark text-white">
+      <div className="pitch-panel">
         <h2 className="text-lg font-bold">Step 3 · Fill the knockout bracket</h2>
         <p className="text-sm text-white/80 mt-1">
           Tap the team you think wins each match. Your picks flow forward automatically. 🏆
@@ -138,30 +138,37 @@ interface MatchProps {
 function MatchCard({ num, t1, t2, pick, onPick }: MatchProps) {
   return (
     <div className="rounded-xl border border-slate-200 bg-white overflow-hidden shadow-sm">
-      {[t1, t2].map((team, i) => {
-        const picked = pick && team && pick === team;
-        const disabled = !team;
-        return (
-          <button
-            key={i}
-            disabled={disabled}
-            onClick={() => onPick(team)}
-            className={`w-full flex items-center gap-2 px-3 py-3 text-left border-b last:border-b-0 border-slate-100 transition-colors min-h-[3rem] ${
-              picked ? "bg-pitch text-white" : disabled ? "bg-slate-50" : "hover:bg-green-50 active:bg-green-100"
-            }`}
-          >
-            <span className="flex-1 min-w-0">
-              <TeamChip team={team} muted={!team} />
-            </span>
-            {picked ? (
-              <span className="text-sm shrink-0">✓</span>
-            ) : (
-              !disabled && <span className="text-xs text-slate-300 shrink-0">tap to pick</span>
-            )}
-          </button>
-        );
-      })}
+      <TeamRow team={t1} picked={pick === t1 && !!t1} onPick={() => onPick(t1)} />
+      {/* center line / "vs" divider, like a scoreboard */}
+      <div className="relative h-0 border-t border-slate-100">
+        <span className="absolute left-1/2 top-1/2 -translate-x-1/2 -translate-y-1/2 bg-white text-[10px] font-bold text-slate-400 px-1.5 rounded-full border border-slate-200">
+          vs
+        </span>
+      </div>
+      <TeamRow team={t2} picked={pick === t2 && !!t2} onPick={() => onPick(t2)} />
       <div className="text-[10px] text-slate-300 text-right px-2 pb-0.5">Match #{num}</div>
     </div>
+  );
+}
+
+function TeamRow({ team, picked, onPick }: { team: string; picked: boolean; onPick: () => void }) {
+  const disabled = !team;
+  return (
+    <button
+      disabled={disabled}
+      onClick={onPick}
+      className={`w-full flex items-center gap-2 px-3 py-3 text-left transition-colors min-h-[3rem] ${
+        picked ? "bg-pitch text-white" : disabled ? "bg-slate-50" : "hover:bg-green-50 active:bg-green-100"
+      }`}
+    >
+      <span className="flex-1 min-w-0">
+        <TeamChip team={team} muted={!team} />
+      </span>
+      {picked ? (
+        <span className="text-sm shrink-0">✓</span>
+      ) : (
+        !disabled && <span className="text-xs text-slate-300 shrink-0">tap to pick</span>
+      )}
+    </button>
   );
 }

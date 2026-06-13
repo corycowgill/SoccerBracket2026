@@ -11,7 +11,7 @@ export default {
         },
       },
       fontFamily: {
-        display: ["'Trebuchet MS'", "Verdana", "system-ui", "sans-serif"],
+        display: ["Rubik", "'Trebuchet MS'", "Verdana", "system-ui", "sans-serif"],
       },
     },
   },

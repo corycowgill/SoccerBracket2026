@@ -123,13 +123,16 @@ export default function App() {
 
   return (
     <div className="min-h-screen flex flex-col">
-      <header className="bg-pitch text-white shadow-md">
+      <header className="bg-gradient-to-b from-pitch-dark to-pitch text-white shadow-lg border-b-4 border-white/80">
         <div className="max-w-6xl mx-auto px-4 py-3">
           <div className="flex items-center justify-between gap-3">
-            <h1 className="text-xl font-bold flex items-center gap-2">
-              ⚽ World Cup 2026 Family Bracket
+            <h1 className="text-xl font-extrabold tracking-tight flex items-center gap-2">
+              <span className="text-2xl">⚽</span> World Cup 2026
+              <span className="hidden sm:inline font-semibold text-white/80">Family Bracket</span>
             </h1>
-            <span className="text-xs text-white/70 hidden sm:block">USA · Canada · Mexico</span>
+            <span className="text-xs font-semibold text-white/80 hidden sm:block uppercase tracking-wide">
+              🇺🇸 USA · 🇨🇦 Canada · 🇲🇽 Mexico
+            </span>
           </div>
           <nav className="flex gap-1 mt-3 overflow-x-auto">
             <TabButton active={tab === "fill"} onClick={() => setTab("fill")}>Fill Bracket</TabButton>
@@ -246,7 +249,7 @@ export default function App() {
         {tab === "rules" && <Rules />}
       </main>
 
-      <footer className="text-center text-xs text-slate-400 py-4">
+      <footer className="text-center text-xs text-white/70 py-4">
         Built for family fun · results from openfootball · brackets saved on this device
       </footer>
 

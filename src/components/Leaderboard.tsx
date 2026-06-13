@@ -29,7 +29,7 @@ export default function Leaderboard({ tournament, feed, brackets }: Props) {
 
   return (
     <div className="space-y-4">
-      <div className="card bg-pitch-dark text-white">
+      <div className="pitch-panel">
         <h2 className="text-lg font-bold">Family Leaderboard</h2>
         <p className="text-sm text-white/80 mt-1">
           Points update as real results come in. Refresh results on the “Results” tab.

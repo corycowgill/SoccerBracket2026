@@ -1,7 +1,7 @@
 export default function Rules() {
   return (
     <div className="space-y-4 max-w-3xl">
-      <div className="card bg-pitch-dark text-white">
+      <div className="pitch-panel">
         <h2 className="text-xl font-bold">How the World Cup 2026 works 🌎</h2>
         <p className="text-sm text-white/80 mt-1">
           A quick, no-jargon guide — and how scoring works in this game.
