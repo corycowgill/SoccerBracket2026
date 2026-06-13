@@ -1,7 +1,8 @@
 import { useMemo, useState } from "react";
 import type { Bracket, FeedData, Tournament } from "../types";
 import { leaderboard } from "../lib/scoring";
-import { resolveActual } from "../lib/standings";
+import { actualKnockout, resolveActual, resolvePredicted } from "../lib/standings";
+import TeamChip from "./TeamChip";
 
 interface Props {
   tournament: Tournament;
@@ -18,6 +19,12 @@ export default function Leaderboard({ tournament, feed, brackets }: Props) {
     [tournament, feed, brackets],
   );
   const actual = useMemo(() => resolveActual(tournament, feed), [tournament, feed]);
+  const actualKO = useMemo(() => actualKnockout(feed), [feed]);
+  const championById = useMemo(() => {
+    const m = new Map<string, string | undefined>();
+    for (const b of brackets) m.set(b.id, resolvePredicted(tournament, b).champion);
+    return m;
+  }, [tournament, brackets]);
 
   if (brackets.length === 0) {
     return (
@@ -49,12 +56,13 @@ export default function Leaderboard({ tournament, feed, brackets }: Props) {
                 onClick={() => setOpenId(open ? null : s.bracketId)}
               >
                 <span className="text-2xl w-8 text-center">{MEDALS[i] ?? i + 1}</span>
-                <span className="flex-1">
+                <span className="flex-1 min-w-0">
                   <span className="font-bold text-lg">{s.name}</span>
                   <span className="block text-xs text-slate-500">
                     Groups {s.breakdown.groupPoints} · Knockout {s.breakdown.knockoutPoints} · Bonus{" "}
                     {s.breakdown.bonusPoints}
                   </span>
+                  <ChampionPick champ={championById.get(s.bracketId)} actualKO={actualKO} />
                 </span>
                 <span className="text-2xl font-bold text-pitch-dark">{s.total}</span>
                 <span className="text-slate-400">{open ? "▲" : "▼"}</span>
@@ -77,5 +85,29 @@ export default function Leaderboard({ tournament, feed, brackets }: Props) {
         })}
       </div>
     </div>
+  );
+}
+
+function ChampionPick({
+  champ,
+  actualKO,
+}: {
+  champ?: string;
+  actualKO: ReturnType<typeof actualKnockout>;
+}) {
+  if (!champ) {
+    return <span className="block text-xs text-slate-400 mt-0.5 italic">No champion picked yet</span>;
+  }
+  const won = champ === actualKO.champion;
+  const out = actualKO.eliminated.has(champ);
+  return (
+    <span className="flex items-center gap-1 mt-1 text-xs">
+      <span className="text-slate-400">Pick:</span>
+      <span className={out ? "line-through opacity-60" : ""}>
+        <TeamChip team={champ} size="sm" showRank={false} />
+      </span>
+      {won && <span className="font-bold text-green-600">🏆 champion!</span>}
+      {!won && out && <span className="font-bold text-red-600">✗ out</span>}
+    </span>
   );
 }
