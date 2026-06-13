@@ -5,6 +5,7 @@ import type { ManualResult, ManualResults } from "../lib/manualResults";
 import { matchKey } from "../lib/manualResults";
 import { allStandings } from "../lib/standings";
 import { isPlayed } from "../lib/feed";
+import Fixtures from "./Fixtures";
 import TeamChip from "./TeamChip";
 
 interface Props {
@@ -71,7 +72,11 @@ export default function Results({
         .
       </div>
 
+      {/* Recent results & upcoming fixtures */}
+      <Fixtures feed={feed} />
+
       {/* Standings */}
+      <h3 className="font-bold text-white text-lg px-1">Group standings</h3>
       <div className="grid gap-4 md:grid-cols-2 xl:grid-cols-3">
         {tournament.groups.map((g) => (
           <div key={g.letter} className="card">
