@@ -105,7 +105,12 @@ export default function GroupStage({
           const groupPlayed = rows.some((r) => r.played > 0);
           return (
             <div key={g.letter} className="card">
-              <h3 className="font-bold text-pitch-dark mb-2">Group {g.letter}</h3>
+              <h3 className="font-bold text-pitch-dark mb-2 flex items-center gap-2">
+                <span className="inline-flex items-center justify-center w-6 h-6 rounded-full bg-gradient-to-br from-pitch to-pitch-dark text-white text-xs shadow">
+                  {g.letter}
+                </span>
+                Group {g.letter}
+              </h3>
               <DndContext
                 sensors={sensors}
                 collisionDetection={closestCenter}

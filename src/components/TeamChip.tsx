@@ -1,4 +1,4 @@
-import { flagUrl, teamRank } from "../lib/teamMeta";
+import { flagUrl, teamColor, teamRank } from "../lib/teamMeta";
 
 interface Props {
   team: string;
@@ -7,7 +7,7 @@ interface Props {
   showRank?: boolean;
 }
 
-/** A team name with its flag and (optionally) FIFA world ranking. */
+/** A team name with its flag, color accent and (optionally) FIFA world ranking. */
 export default function TeamChip({ team, size = "md", muted = false, showRank = true }: Props) {
   const url = team ? flagUrl(team) : null;
   const rank = team ? teamRank(team) : undefined;
@@ -15,6 +15,13 @@ export default function TeamChip({ team, size = "md", muted = false, showRank = 
   const text = size === "sm" ? "text-sm" : "text-base";
   return (
     <span className={`inline-flex items-center gap-2 min-w-0 ${text} ${muted ? "text-slate-400" : ""}`}>
+      {team && !muted && (
+        <span
+          className={`shrink-0 ${size === "sm" ? "h-3.5" : "h-5"} w-1 rounded-full`}
+          style={{ backgroundColor: teamColor(team) }}
+          aria-hidden="true"
+        />
+      )}
       {url ? (
         <img src={url} alt="" className={`${flagH} w-auto rounded-sm shadow-sm shrink-0`} loading="lazy" />
       ) : (

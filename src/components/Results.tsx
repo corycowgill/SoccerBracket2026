@@ -80,7 +80,12 @@ export default function Results({
       <div className="grid gap-4 md:grid-cols-2 xl:grid-cols-3">
         {tournament.groups.map((g) => (
           <div key={g.letter} className="card">
-            <h3 className="font-bold text-pitch-dark mb-2">Group {g.letter}</h3>
+            <h3 className="font-bold text-pitch-dark mb-2 flex items-center gap-2">
+              <span className="inline-flex items-center justify-center w-6 h-6 rounded-full bg-gradient-to-br from-pitch to-pitch-dark text-white text-xs shadow">
+                {g.letter}
+              </span>
+              Group {g.letter}
+            </h3>
             <table className="w-full text-sm">
               <thead>
                 <tr className="text-slate-400 text-xs">

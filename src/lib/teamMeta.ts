@@ -121,3 +121,60 @@ export function teamRank(team: string): number | undefined {
 export function byFifaRank(a: string, b: string): number {
   return (TEAM_RANK[a] ?? 999) - (TEAM_RANK[b] ?? 999);
 }
+
+// A signature color per nation (kit / flag primary) used as a small accent.
+const TEAM_COLOR: Record<string, string> = {
+  Mexico: "#006847",
+  "South Africa": "#007749",
+  "South Korea": "#CD2E3A",
+  "Czech Republic": "#11457E",
+  Canada: "#FF0000",
+  "Bosnia & Herzegovina": "#002F6C",
+  Qatar: "#8A1538",
+  Switzerland: "#D52B1E",
+  Brazil: "#FFDF00",
+  Morocco: "#C1272D",
+  Haiti: "#00209F",
+  Scotland: "#0065BF",
+  USA: "#0A3161",
+  Paraguay: "#D52B1E",
+  Australia: "#FFCD00",
+  Turkey: "#E30A17",
+  Germany: "#1A1A1A",
+  "Curaçao": "#002B7F",
+  "Ivory Coast": "#FF8200",
+  Ecuador: "#FFD100",
+  Netherlands: "#FF6C00",
+  Japan: "#0033A0",
+  Sweden: "#FECC02",
+  Tunisia: "#E70013",
+  Belgium: "#E30613",
+  Egypt: "#CE1126",
+  Iran: "#239F40",
+  "New Zealand": "#1A1A1A",
+  Spain: "#C60B1E",
+  "Cape Verde": "#003893",
+  "Saudi Arabia": "#006C35",
+  Uruguay: "#5CB8E4",
+  France: "#002654",
+  Senegal: "#00853F",
+  Iraq: "#007A3D",
+  Norway: "#BA0C2F",
+  Argentina: "#75AADB",
+  Algeria: "#006233",
+  Austria: "#ED2939",
+  Jordan: "#007A3D",
+  Portugal: "#C8102E",
+  "DR Congo": "#007FFF",
+  Uzbekistan: "#0099B5",
+  Colombia: "#FCD116",
+  England: "#CE1124",
+  Croatia: "#FF0000",
+  Ghana: "#006B3F",
+  Panama: "#005293",
+};
+
+/** A team's signature accent color, or a neutral grey if unknown. */
+export function teamColor(team: string): string {
+  return TEAM_COLOR[team] ?? "#94a3b8";
+}
