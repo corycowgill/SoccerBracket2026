@@ -1,4 +1,4 @@
-import { useMemo, useState } from "react";
+import { useEffect, useMemo, useState } from "react";
 import type { Bracket, KnockoutRound, Tournament } from "../types";
 import { KNOCKOUT_ROUNDS } from "../types";
 import { resolvePredicted, type ActualKnockout } from "../lib/standings";
@@ -49,6 +49,17 @@ export default function Knockout({ tournament, bracket, actual, onPick }: Props)
   const roundIdx = KNOCKOUT_ROUNDS.indexOf(round);
   const nextRound = KNOCKOUT_ROUNDS[roundIdx + 1];
   const current = picksInRound(round);
+
+  // On open, jump to the first round that still has unpicked matches.
+  useEffect(() => {
+    if (!ready) return;
+    const firstIncomplete = KNOCKOUT_ROUNDS.find((r) => {
+      const { done, total } = picksInRound(r);
+      return total > 0 && done < total;
+    });
+    if (firstIncomplete) setRound(firstIncomplete);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, []);
 
   return (
     <div className="space-y-4">

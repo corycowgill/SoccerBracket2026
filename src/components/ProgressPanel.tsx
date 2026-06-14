@@ -1,4 +1,4 @@
-import { useEffect, useRef } from "react";
+import { useEffect, useRef, useState } from "react";
 import type { Bracket, Tournament } from "../types";
 import { bracketProgress } from "../lib/progress";
 import { celebrate } from "../lib/confetti";
@@ -9,10 +9,20 @@ interface Props {
   bracket: Bracket;
   fillTab: "groups" | "knockout";
   onGoTo: (tab: "groups" | "knockout") => void;
+  onAutoFill: () => void;
+  onReset: () => void;
 }
 
-export default function ProgressPanel({ tournament, bracket, fillTab, onGoTo }: Props) {
+export default function ProgressPanel({
+  tournament,
+  bracket,
+  fillTab,
+  onGoTo,
+  onAutoFill,
+  onReset,
+}: Props) {
   const p = bracketProgress(tournament, bracket);
+  const [confirmReset, setConfirmReset] = useState(false);
 
   // Celebrate the moment a bracket is finished — only on the actual transition,
   // not when switching to a bracket that was already complete.
@@ -82,6 +92,42 @@ export default function ProgressPanel({ tournament, bracket, fillTab, onGoTo }: 
           champion={p.champion}
           onClick={() => onGoTo("knockout")}
         />
+      </div>
+
+      {/* Quick actions */}
+      <div className="mt-3 pt-3 border-t border-slate-100 flex flex-wrap items-center gap-2">
+        {!p.complete && (
+          <button className="btn-primary" onClick={onAutoFill}>
+            ⚡ Auto-fill the rest
+          </button>
+        )}
+        <span className="text-xs text-slate-400">
+          {p.complete
+            ? "Bracket complete — tweak any pick any time."
+            : "Fills remaining picks using FIFA rankings; you can still change anything."}
+        </span>
+        <div className="flex-1" />
+        {confirmReset ? (
+          <span className="flex items-center gap-1">
+            <span className="text-xs text-slate-500">Clear all picks?</span>
+            <button
+              className="btn bg-red-600 text-white hover:bg-red-700"
+              onClick={() => {
+                onReset();
+                setConfirmReset(false);
+              }}
+            >
+              Yes, reset
+            </button>
+            <button className="btn-ghost" onClick={() => setConfirmReset(false)}>
+              Cancel
+            </button>
+          </span>
+        ) : (
+          <button className="btn-ghost text-slate-500" onClick={() => setConfirmReset(true)}>
+            Reset
+          </button>
+        )}
       </div>
     </div>
   );

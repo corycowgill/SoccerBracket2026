@@ -141,6 +141,27 @@ describe("actual knockout outcomes", () => {
   });
 });
 
+describe("auto-fill", () => {
+  it("completes an empty bracket using rankings", async () => {
+    const { autoFillRest } = await import("./autofill");
+    const { bracketProgress } = await import("./progress");
+    const empty: Bracket = {
+      id: "x",
+      name: "Auto",
+      createdAt: 0,
+      updatedAt: 0,
+      groupOrder: {},
+      thirdPlaceTeams: [],
+      knockoutPick: {},
+    };
+    const filled = autoFillRest(tournament, empty);
+    const p = bracketProgress(tournament, filled);
+    expect(p.thirdsPicked).toBe(8);
+    expect(p.complete).toBe(true);
+    expect(p.champion).toBeTruthy();
+  });
+});
+
 // ---- test helpers ----
 
 function makeBracket(): Bracket {

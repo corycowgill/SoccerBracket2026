@@ -2,6 +2,7 @@ import { useEffect, useMemo, useState } from "react";
 import type { Bracket } from "./types";
 import { buildTournament } from "./lib/feed";
 import { actualKnockout, allStandings } from "./lib/standings";
+import { autoFillRest } from "./lib/autofill";
 import { bundledFeed, loadCachedFeed, refreshFeed, type FeedState } from "./lib/feedClient";
 import {
   applyManualResults,
@@ -208,6 +209,12 @@ export default function App() {
                 bracket={active}
                 fillTab={fillTab}
                 onGoTo={setFillTab}
+                onAutoFill={() =>
+                  updateActive((b) => ({ ...b, ...autoFillRest(tournament, b) }))
+                }
+                onReset={() =>
+                  updateActive((b) => ({ ...b, groupOrder: {}, thirdPlaceTeams: [], knockoutPick: {} }))
+                }
               />
               <div className="flex gap-2">
                 <SubTab active={fillTab === "groups"} onClick={() => setFillTab("groups")}>
