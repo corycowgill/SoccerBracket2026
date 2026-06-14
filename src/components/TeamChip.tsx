@@ -23,7 +23,12 @@ export default function TeamChip({ team, size = "md", muted = false, showRank = 
         />
       )}
       {url ? (
-        <img src={url} alt="" className={`${flagH} w-auto rounded-sm shadow-sm shrink-0`} loading="lazy" />
+        <img
+          src={url}
+          alt=""
+          className={`${flagH} w-auto rounded shadow-sm ring-1 ring-black/10 shrink-0`}
+          loading="lazy"
+        />
       ) : (
         <span className={`shrink-0 ${size === "sm" ? "text-sm" : "text-lg"}`}>{team ? "🏳️" : "⚽"}</span>
       )}

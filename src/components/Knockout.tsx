@@ -80,10 +80,12 @@ export default function Knockout({ tournament, bracket, actual, onPick }: Props)
             <button
               key={r}
               onClick={() => setRound(r)}
-              className={`shrink-0 flex flex-col items-center rounded-lg px-3 py-1.5 border text-xs font-semibold transition-colors ${
+              className={`shrink-0 flex flex-col items-center rounded-xl px-3.5 py-2 border text-xs font-semibold transition-all ${
                 isActive
-                  ? "bg-pitch text-white border-pitch"
-                  : "bg-white text-slate-600 border-slate-200 hover:border-pitch"
+                  ? "bg-gradient-to-b from-pitch to-pitch-dark text-white border-pitch shadow-md scale-105"
+                  : complete
+                    ? "bg-green-50 text-green-700 border-green-200 hover:border-pitch"
+                    : "bg-white text-slate-600 border-slate-200 hover:border-pitch"
               }`}
             >
               <span>{ROUND_LABEL[r]}</span>
@@ -157,7 +159,10 @@ function MatchCard({ num, t1, t2, pick, actual, onPick }: MatchProps) {
   }
 
   return (
-    <div className="rounded-xl border border-slate-200 bg-white overflow-hidden shadow-sm">
+    <div className="rounded-xl border border-slate-200 bg-white overflow-hidden shadow-sm hover:shadow-md transition-shadow">
+      <div className="bg-slate-50 border-b border-slate-100 px-3 py-1 text-[10px] font-bold text-slate-400 uppercase tracking-wider text-center">
+        Match {num}
+      </div>
       <TeamRow
         team={t1}
         picked={pick === t1 && !!t1}
@@ -178,7 +183,6 @@ function MatchCard({ num, t1, t2, pick, actual, onPick }: MatchProps) {
         outcome={pick === t2 ? outcome : null}
         onPick={() => onPick(t2)}
       />
-      <div className="text-[10px] text-slate-300 text-right px-2 pb-0.5">Match #{num}</div>
     </div>
   );
 }
