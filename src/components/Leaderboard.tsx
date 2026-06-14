@@ -49,15 +49,26 @@ export default function Leaderboard({ tournament, feed, brackets }: Props) {
       <div className="space-y-2">
         {scores.map((s, i) => {
           const open = openId === s.bracketId;
+          const isLeader = i === 0 && s.total > 0;
           return (
-            <div key={s.bracketId} className="card">
+            <div
+              key={s.bracketId}
+              className={`card ${
+                isLeader
+                  ? "bg-gradient-to-br from-amber-50 to-yellow-100 border-amber-300 ring-2 ring-amber-300/60"
+                  : ""
+              }`}
+            >
               <button
                 className="w-full flex items-center gap-3 text-left"
                 onClick={() => setOpenId(open ? null : s.bracketId)}
               >
                 <span className="text-2xl w-8 text-center">{MEDALS[i] ?? i + 1}</span>
                 <span className="flex-1 min-w-0">
-                  <span className="font-bold text-lg">{s.name}</span>
+                  <span className="font-bold text-lg">
+                    {s.name}
+                    {isLeader && <span className="ml-1" title="Family leader">👑</span>}
+                  </span>
                   <span className="block text-xs text-slate-500">
                     Groups {s.breakdown.groupPoints} · Knockout {s.breakdown.knockoutPoints} · Bonus{" "}
                     {s.breakdown.bonusPoints}

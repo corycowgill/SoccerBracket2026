@@ -164,7 +164,7 @@ export default function App() {
             <h1 className="text-2xl font-extrabold tracking-tight flex items-center gap-2 drop-shadow">
               <span className="text-2xl animate-trophy">⚽</span>
               <span>
-                World Cup <span className="text-amber-300">2026</span>
+                World Cup <span className="text-shimmer font-black">2026</span>
               </span>
               <span className="hidden sm:inline text-base font-semibold text-white/70">
                 Family Bracket

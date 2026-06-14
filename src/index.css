@@ -38,9 +38,10 @@
       0 10px 25px -14px rgba(0, 0, 0, 0.4),
       0 2px 6px -2px rgba(0, 0, 0, 0.12);
   }
-  /* A dark "pitch" panel: diagonal green depth, top sheen, faint mowed stripes. */
+  /* A dark "pitch" panel: diagonal green depth, top sheen, faint mowed stripes,
+     plus a soccer-ball watermark in the corner. */
   .pitch-panel {
-    @apply rounded-2xl shadow-lg p-4 text-white;
+    @apply rounded-2xl shadow-lg p-4 text-white relative overflow-hidden;
     background-color: #166534;
     background-image:
       repeating-linear-gradient(
@@ -52,6 +53,15 @@
       ),
       radial-gradient(120% 150% at 100% 0%, rgba(255, 255, 255, 0.16), rgba(255, 255, 255, 0) 55%),
       linear-gradient(135deg, #14532d 0%, #166534 60%, #15803d 100%);
+  }
+  .pitch-panel::after {
+    content: "⚽";
+    @apply absolute pointer-events-none;
+    right: -6px;
+    bottom: -18px;
+    font-size: 84px;
+    opacity: 0.12;
+    transform: rotate(-12deg);
   }
   .btn {
     @apply inline-flex items-center gap-2 px-3 py-2 rounded-lg font-semibold text-sm transition-all disabled:opacity-50 disabled:cursor-not-allowed;
@@ -116,7 +126,48 @@
 @media (prefers-reduced-motion: reduce) {
   .animate-fade-up,
   .animate-trophy,
-  .animate-glow {
+  .animate-glow,
+  .text-shimmer,
+  .progress-shine::after {
     animation: none;
   }
+}
+
+/* Shimmering gold text (the "2026" in the title). */
+@keyframes shimmerMove {
+  to {
+    background-position: 200% center;
+  }
+}
+.text-shimmer {
+  background-image: linear-gradient(100deg, #f59e0b, #fde68a 45%, #fffbeb 50%, #fde68a 55%, #f59e0b);
+  background-size: 200% auto;
+  -webkit-background-clip: text;
+  background-clip: text;
+  color: transparent;
+  animation: shimmerMove 3.5s linear infinite;
+}
+
+/* Animated sheen sweeping across the progress bar fill. */
+@keyframes progressShine {
+  0% {
+    transform: translateX(-100%);
+  }
+  60%,
+  100% {
+    transform: translateX(300%);
+  }
+}
+.progress-shine {
+  position: relative;
+  overflow: hidden;
+  background-image: linear-gradient(90deg, #15803d, #22c55e);
+}
+.progress-shine::after {
+  content: "";
+  position: absolute;
+  inset: 0;
+  width: 40%;
+  background: linear-gradient(90deg, transparent, rgba(255, 255, 255, 0.55), transparent);
+  animation: progressShine 2.4s ease-in-out infinite;
 }

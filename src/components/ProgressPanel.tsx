@@ -49,9 +49,11 @@ export default function ProgressPanel({ tournament, bracket, fillTab, onGoTo }: 
       </div>
 
       {/* Progress bar */}
-      <div className="mt-2 h-2 rounded-full bg-slate-100 overflow-hidden">
+      <div className="mt-2 h-2.5 rounded-full bg-slate-100 overflow-hidden">
         <div
-          className="h-full bg-pitch transition-all duration-300"
+          className={`h-full rounded-full transition-all duration-500 ${
+            p.percent > 0 ? "progress-shine" : ""
+          }`}
           style={{ width: `${p.percent}%` }}
         />
       </div>
