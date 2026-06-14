@@ -16,6 +16,7 @@ import {
 } from "@dnd-kit/sortable";
 import { CSS } from "@dnd-kit/utilities";
 import type { Bracket, StandingRow, Tournament } from "../types";
+import PanelHeader from "./PanelHeader";
 import TeamChip from "./TeamChip";
 
 interface Props {
@@ -88,14 +89,11 @@ export default function GroupStage({
 
   return (
     <div className="space-y-6">
-      <div className="pitch-panel">
-        <h2 className="text-lg font-bold">Step 1 · Predict the group stage</h2>
-        <p className="text-sm text-white/80 mt-1">
-          Put each group in the order you think it will finish. The top 2 of every group go
-          through automatically. <strong>Drag the ⠿ handle</strong> to reorder, or use the arrows.
-          Once games are played, each team shows its <strong>live position</strong> in the real table.
-        </p>
-      </div>
+      <PanelHeader icon="⚽" title="Step 1 · Predict the group stage">
+        Put each group in the order you think it will finish. The top 2 of every group go
+        through automatically. <strong>Drag the ⠿ handle</strong> to reorder, or use the arrows.
+        Once games are played, each team shows its <strong>live position</strong> in the real table.
+      </PanelHeader>
 
       <div className="grid gap-4 md:grid-cols-2 xl:grid-cols-3">
         {tournament.groups.map((g) => {

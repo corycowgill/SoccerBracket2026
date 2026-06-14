@@ -2,6 +2,7 @@ import { useMemo, useState } from "react";
 import type { Bracket, FeedData, Tournament } from "../types";
 import { leaderboard } from "../lib/scoring";
 import { actualKnockout, resolveActual, resolvePredicted } from "../lib/standings";
+import PanelHeader from "./PanelHeader";
 import TeamChip from "./TeamChip";
 
 interface Props {
@@ -36,15 +37,12 @@ export default function Leaderboard({ tournament, feed, brackets }: Props) {
 
   return (
     <div className="space-y-4">
-      <div className="pitch-panel">
-        <h2 className="text-lg font-bold">Family Leaderboard</h2>
-        <p className="text-sm text-white/80 mt-1">
-          Points update as real results come in. Refresh results on the “Results” tab.
-          {actual.champion && (
-            <> The champion is <strong>{actual.champion}</strong> 🏆.</>
-          )}
-        </p>
-      </div>
+      <PanelHeader icon="🏅" title="Family Leaderboard">
+        Points update as real results come in. Refresh results on the “Results” tab.
+        {actual.champion && (
+          <> The champion is <strong>{actual.champion}</strong> 🏆.</>
+        )}
+      </PanelHeader>
 
       <div className="space-y-2">
         {scores.map((s, i) => {

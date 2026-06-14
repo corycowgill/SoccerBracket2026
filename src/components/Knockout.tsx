@@ -2,6 +2,7 @@ import { useMemo, useState } from "react";
 import type { Bracket, KnockoutRound, Tournament } from "../types";
 import { KNOCKOUT_ROUNDS } from "../types";
 import { resolvePredicted, type ActualKnockout } from "../lib/standings";
+import PanelHeader from "./PanelHeader";
 import TeamChip from "./TeamChip";
 
 interface Props {
@@ -51,24 +52,21 @@ export default function Knockout({ tournament, bracket, actual, onPick }: Props)
 
   return (
     <div className="space-y-4">
-      <div className="pitch-panel">
-        <h2 className="text-lg font-bold">Step 3 · Fill the knockout bracket</h2>
-        <p className="text-sm text-white/80 mt-1">
-          Tap the team you think wins each match. Your picks flow forward automatically. 🏆
-        </p>
+      <PanelHeader icon="🏆" title="Step 3 · Fill the knockout bracket">
+        Tap the team you think wins each match. Your picks flow forward automatically. 🏆
         {!ready && (
-          <p className="text-sm bg-amber-400/20 text-amber-100 rounded px-2 py-1 mt-2">
+          <span className="block text-sm bg-amber-400/20 text-amber-100 rounded px-2 py-1 mt-2">
             Finish Steps 1 &amp; 2 first (order every group and pick 8 third-place teams) so the
             Round of 32 fills in.
-          </p>
+          </span>
         )}
         {(Object.keys(actual.winners).length > 0 || actual.eliminated.size > 0) && (
-          <p className="text-xs text-white/70 mt-2">
+          <span className="block text-xs text-white/70 mt-2">
             As real games finish: ✓ your pick advanced · <span className="line-through">faded</span>{" "}
             teams are knocked out · ✗ means your pick is out.
-          </p>
+          </span>
         )}
-      </div>
+      </PanelHeader>
 
       {/* Round selector */}
       <div className="flex gap-2 overflow-x-auto pb-1 -mx-1 px-1">
