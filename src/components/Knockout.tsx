@@ -2,6 +2,7 @@ import { useEffect, useMemo, useState } from "react";
 import type { Bracket, KnockoutRound, Tournament } from "../types";
 import { KNOCKOUT_ROUNDS } from "../types";
 import { resolvePredicted, type ActualKnockout } from "../lib/standings";
+import { teamColor } from "../lib/teamMeta";
 import PanelHeader from "./PanelHeader";
 import TeamChip from "./TeamChip";
 
@@ -135,13 +136,16 @@ export default function Knockout({ tournament, bracket, actual, onPick }: Props)
       )}
 
       {resolved.champion && (
-        <div className="card text-center bg-gradient-to-br from-yellow-50 via-amber-50 to-amber-100 border-amber-300 animate-glow">
-          <p className="text-xs font-bold uppercase tracking-wide text-amber-600">
-            Your predicted champion
-          </p>
-          <div className="text-3xl mt-1 animate-trophy">🏆</div>
-          <div className="text-2xl font-extrabold mt-1 flex items-center justify-center gap-2">
-            <TeamChip team={resolved.champion} />
+        <div className="card text-center bg-gradient-to-br from-yellow-50 via-amber-50 to-amber-100 border-amber-300 animate-glow overflow-hidden p-0">
+          <div className="h-2" style={{ background: teamColor(resolved.champion) }} />
+          <div className="p-4">
+            <p className="text-xs font-bold uppercase tracking-wide text-amber-600">
+              Your predicted champion
+            </p>
+            <div className="text-3xl mt-1 animate-trophy">🏆</div>
+            <div className="text-2xl font-extrabold mt-1 flex items-center justify-center gap-2">
+              <TeamChip team={resolved.champion} />
+            </div>
           </div>
         </div>
       )}
@@ -169,9 +173,11 @@ function MatchCard({ num, t1, t2, pick, actual, onPick }: MatchProps) {
 
   return (
     <div className="rounded-xl border border-slate-200 bg-white overflow-hidden shadow-sm hover:shadow-md transition-shadow">
-      <div className="bg-slate-50 border-b border-slate-100 px-3 py-1 text-[10px] font-bold text-slate-400 uppercase tracking-wider text-center">
-        Match {num}
-      </div>
+      {/* color strip blending the two teams' colors */}
+      <div
+        className="h-1.5"
+        style={{ background: `linear-gradient(90deg, ${teamColor(t1)}, ${teamColor(t2)})` }}
+      />
       <TeamRow
         team={t1}
         picked={pick === t1 && !!t1}
@@ -192,6 +198,9 @@ function MatchCard({ num, t1, t2, pick, actual, onPick }: MatchProps) {
         outcome={pick === t2 ? outcome : null}
         onPick={() => onPick(t2)}
       />
+      <div className="text-[10px] text-slate-300 text-center py-0.5 uppercase tracking-wider">
+        Match {num}
+      </div>
     </div>
   );
 }
