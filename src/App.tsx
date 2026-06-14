@@ -27,6 +27,7 @@ import Results from "./components/Results";
 import Rules from "./components/Rules";
 import Toast, { type ToastMessage } from "./components/Toast";
 import MusicPlayer from "./components/MusicPlayer";
+import Logo from "./components/Logo";
 
 type Tab = "fill" | "leaderboard" | "results" | "rules";
 type FillTab = "groups" | "knockout";
@@ -163,7 +164,7 @@ export default function App() {
         <div className="relative max-w-6xl mx-auto px-4 py-3">
           <div className="flex items-center justify-between gap-3">
             <h1 className="text-2xl font-extrabold tracking-tight flex items-center gap-2 drop-shadow">
-              <span className="text-2xl animate-trophy">⚽</span>
+              <Logo className="h-9 w-9 drop-shadow" />
               <span>
                 World Cup <span className="text-shimmer font-black">2026</span>
               </span>
