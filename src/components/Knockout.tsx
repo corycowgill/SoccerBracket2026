@@ -1,7 +1,7 @@
 import { useEffect, useMemo, useState } from "react";
 import type { Bracket, KnockoutRound, Tournament } from "../types";
 import { KNOCKOUT_ROUNDS } from "../types";
-import { resolvePredicted, type ActualKnockout } from "../lib/standings";
+import type { ActualKnockout } from "../lib/standings";
 import { teamColor } from "../lib/teamMeta";
 import PanelHeader from "./PanelHeader";
 import TeamChip from "./TeamChip";
@@ -9,7 +9,11 @@ import TeamChip from "./TeamChip";
 interface Props {
   tournament: Tournament;
   bracket: Bracket;
+  matchups: Record<number, [string, string]>;
+  champion?: string;
   actual: ActualKnockout;
+  ready: boolean;
+  playMode: boolean; // true once the real Round of 32 is set
   onPick: (matchNum: number, team: string) => void;
 }
 
@@ -22,8 +26,16 @@ const ROUND_LABEL: Record<KnockoutRound, string> = {
   Final: "Final",
 };
 
-export default function Knockout({ tournament, bracket, actual, onPick }: Props) {
-  const resolved = useMemo(() => resolvePredicted(tournament, bracket), [tournament, bracket]);
+export default function Knockout({
+  tournament,
+  bracket,
+  matchups,
+  champion,
+  actual,
+  ready,
+  playMode,
+  onPick,
+}: Props) {
   const [round, setRound] = useState<KnockoutRound>("Round of 32");
 
   const byRound = useMemo(() => {
@@ -34,13 +46,11 @@ export default function Knockout({ tournament, bracket, actual, onPick }: Props)
     return map;
   }, [tournament]);
 
-  const ready = bracket.thirdPlaceTeams.length === 8;
-
   function picksInRound(r: KnockoutRound): { done: number; total: number } {
     const matches = byRound[r];
     let done = 0;
     for (const km of matches) {
-      const [t1, t2] = resolved.matchups[km.num] ?? ["", ""];
+      const [t1, t2] = matchups[km.num] ?? ["", ""];
       const pick = bracket.knockoutPick[km.num];
       if (pick && (pick === t1 || pick === t2)) done++;
     }
@@ -64,12 +74,15 @@ export default function Knockout({ tournament, bracket, actual, onPick }: Props)
 
   return (
     <div className="space-y-4">
-      <PanelHeader icon="🏆" title="Step 3 · Fill the knockout bracket">
-        Tap the team you think wins each match. Your picks flow forward automatically. 🏆
+      <PanelHeader icon="🏆" title={playMode ? "Knockouts · Pick the winners" : "Step 3 · Fill the knockout bracket"}>
+        {playMode
+          ? "The group stage is done and the real Round of 32 is set! Tap who you think wins each match — picks flow forward to the Final. 🏆"
+          : "Tap the team you think wins each match. Your picks flow forward automatically. 🏆"}
         {!ready && (
           <span className="block text-sm bg-amber-400/20 text-amber-100 rounded px-2 py-1 mt-2">
-            Finish Steps 1 &amp; 2 first (order every group and pick 8 third-place teams) so the
-            Round of 32 fills in.
+            {playMode
+              ? "Waiting for the Round of 32 line-up to appear — tap Refresh on the Results tab."
+              : "Finish Steps 1 & 2 first (order every group and pick 8 third-place teams) so the Round of 32 fills in."}
           </span>
         )}
         {(Object.keys(actual.winners).length > 0 || actual.eliminated.size > 0) && (
@@ -110,7 +123,7 @@ export default function Knockout({ tournament, bracket, actual, onPick }: Props)
       {/* Matches for the selected round */}
       <div className="grid gap-3 sm:grid-cols-2 lg:grid-cols-3">
         {byRound[round].map((km) => {
-          const [t1, t2] = resolved.matchups[km.num] ?? ["", ""];
+          const [t1, t2] = matchups[km.num] ?? ["", ""];
           const pick = bracket.knockoutPick[km.num];
           return (
             <MatchCard
@@ -135,16 +148,16 @@ export default function Knockout({ tournament, bracket, actual, onPick }: Props)
         </div>
       )}
 
-      {resolved.champion && (
+      {champion && (
         <div className="card text-center bg-gradient-to-br from-yellow-50 via-amber-50 to-amber-100 border-amber-300 animate-glow overflow-hidden p-0">
-          <div className="h-2" style={{ background: teamColor(resolved.champion) }} />
+          <div className="h-2" style={{ background: teamColor(champion) }} />
           <div className="p-4">
             <p className="text-xs font-bold uppercase tracking-wide text-amber-600">
-              Your predicted champion
+              Your pick to win it all
             </p>
             <div className="text-3xl mt-1 animate-trophy">🏆</div>
             <div className="text-2xl font-extrabold mt-1 flex items-center justify-center gap-2">
-              <TeamChip team={resolved.champion} />
+              <TeamChip team={champion} />
             </div>
           </div>
         </div>

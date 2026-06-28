@@ -23,6 +23,7 @@ interface Props {
   tournament: Tournament;
   bracket: Bracket;
   standings: Record<string, StandingRow[]>;
+  locked?: boolean; // group stage finished — predictions are read-only
   onChangeOrder: (letter: string, order: string[]) => void;
   onToggleThird: (team: string) => void;
 }
@@ -52,6 +53,7 @@ export default function GroupStage({
   tournament,
   bracket,
   standings,
+  locked = false,
   onChangeOrder,
   onToggleThird,
 }: Props) {
@@ -89,10 +91,10 @@ export default function GroupStage({
 
   return (
     <div className="space-y-6">
-      <PanelHeader icon="⚽" title="Step 1 · Predict the group stage">
-        Put each group in the order you think it will finish. The top 2 of every group go
-        through automatically. <strong>Drag the ⠿ handle</strong> to reorder, or use the arrows.
-        Once games are played, each team shows its <strong>live position</strong> in the real table.
+      <PanelHeader icon="⚽" title={locked ? "Group stage · Final results" : "Step 1 · Predict the group stage"}>
+        {locked
+          ? "The group stage is over and your group picks are locked in. Final positions are shown next to each team — head to the Knockout tab to pick the bracket winners."
+          : "Put each group in the order you think it will finish. The top 2 of every group go through automatically. Drag the ⠿ handle to reorder, or use the arrows. Once games are played, each team shows its live position in the real table."}
       </PanelHeader>
 
       <div className="grid gap-4 md:grid-cols-2 xl:grid-cols-3">
@@ -108,32 +110,48 @@ export default function GroupStage({
                   {g.letter}
                 </span>
                 Group {g.letter}
+                {locked && <span className="ml-auto text-xs text-slate-400">🔒 locked</span>}
               </h3>
-              <DndContext
-                sensors={sensors}
-                collisionDetection={closestCenter}
-                onDragEnd={(e) => handleDragEnd(g.letter, order, e)}
-              >
-                <SortableContext items={order} strategy={verticalListSortingStrategy}>
-                  <ul className="space-y-1.5">
-                    {order.map((team, idx) => (
-                      <SortableTeamRow
-                        key={team}
-                        team={team}
-                        idx={idx}
-                        last={idx === order.length - 1}
-                        liveRank={groupPlayed ? byTeam.get(team)?.rank : undefined}
-                        onUp={() => move(g.letter, order, idx, -1)}
-                        onDown={() => move(g.letter, order, idx, 1)}
-                      />
-                    ))}
-                  </ul>
-                </SortableContext>
-              </DndContext>
+              {locked ? (
+                <ul className="space-y-1.5">
+                  {order.map((team, idx) => (
+                    <LockedTeamRow
+                      key={team}
+                      team={team}
+                      idx={idx}
+                      liveRank={groupPlayed ? byTeam.get(team)?.rank : undefined}
+                    />
+                  ))}
+                </ul>
+              ) : (
+                <DndContext
+                  sensors={sensors}
+                  collisionDetection={closestCenter}
+                  onDragEnd={(e) => handleDragEnd(g.letter, order, e)}
+                >
+                  <SortableContext items={order} strategy={verticalListSortingStrategy}>
+                    <ul className="space-y-1.5">
+                      {order.map((team, idx) => (
+                        <SortableTeamRow
+                          key={team}
+                          team={team}
+                          idx={idx}
+                          last={idx === order.length - 1}
+                          liveRank={groupPlayed ? byTeam.get(team)?.rank : undefined}
+                          onUp={() => move(g.letter, order, idx, -1)}
+                          onDown={() => move(g.letter, order, idx, 1)}
+                        />
+                      ))}
+                    </ul>
+                  </SortableContext>
+                </DndContext>
+              )}
             </div>
           );
         })}
       </div>
+
+      {!locked && (
 
       <div className="card">
         <h2 className="text-lg font-bold text-pitch-dark">Step 2 · Pick the 8 best third-place teams</h2>
@@ -169,6 +187,7 @@ export default function GroupStage({
           })}
         </div>
       </div>
+      )}
     </div>
   );
 }
@@ -243,6 +262,28 @@ function SortableTeamRow({ team, idx, last, liveRank, onUp, onDown }: RowProps) 
           ▼
         </button>
       </span>
+    </li>
+  );
+}
+
+/** Read-only group row shown once the group stage is locked. */
+function LockedTeamRow({ team, idx, liveRank }: { team: string; idx: number; liveRank?: number }) {
+  return (
+    <li className="flex items-center gap-2 rounded-lg px-1 py-1 bg-white">
+      <span className={`text-xs font-bold px-2 py-0.5 rounded ${POS_STYLE[idx]}`}>
+        {POS_LABEL[idx]}
+      </span>
+      <span className={`flex-1 min-w-0 ${liveRank === 4 ? "opacity-60" : ""}`}>
+        <TeamChip team={team} size="sm" />
+      </span>
+      {liveRank !== undefined && (
+        <span
+          className={`text-[10px] font-bold whitespace-nowrap ${LIVE_STYLE[liveRank - 1]}`}
+          title="Final position in the real group table"
+        >
+          {idx === liveRank - 1 ? "✓ " : ""}finished {POS_LABEL[liveRank - 1]}
+        </span>
+      )}
     </li>
   );
 }

@@ -8,6 +8,8 @@ interface Props {
   tournament: Tournament;
   bracket: Bracket;
   fillTab: "groups" | "knockout";
+  playMode: boolean;
+  playMatchups?: Record<number, [string, string]>;
   onGoTo: (tab: "groups" | "knockout") => void;
   onAutoFill: () => void;
   onReset: () => void;
@@ -17,11 +19,13 @@ export default function ProgressPanel({
   tournament,
   bracket,
   fillTab,
+  playMode,
+  playMatchups,
   onGoTo,
   onAutoFill,
   onReset,
 }: Props) {
-  const p = bracketProgress(tournament, bracket);
+  const p = bracketProgress(tournament, bracket, playMatchups);
   const [confirmReset, setConfirmReset] = useState(false);
 
   // Celebrate the moment a bracket is finished — only on the actual transition,
@@ -70,13 +74,23 @@ export default function ProgressPanel({
 
       {/* Checklist */}
       <div className="mt-3 grid gap-2 sm:grid-cols-3">
-        <Step
-          done={p.thirdsPicked >= 8}
-          active={fillTab === "groups"}
-          label="Third-place teams"
-          detail={`${p.thirdsPicked} / 8 picked`}
-          onClick={() => onGoTo("groups")}
-        />
+        {playMode ? (
+          <Step
+            done
+            active={fillTab === "groups"}
+            label="Group stage"
+            detail="Final · picks locked"
+            onClick={() => onGoTo("groups")}
+          />
+        ) : (
+          <Step
+            done={p.thirdsPicked >= 8}
+            active={fillTab === "groups"}
+            label="Third-place teams"
+            detail={`${p.thirdsPicked} / 8 picked`}
+            onClick={() => onGoTo("groups")}
+          />
+        )}
         <Step
           done={p.knockoutPicked >= p.knockoutTotal}
           active={fillTab === "knockout"}

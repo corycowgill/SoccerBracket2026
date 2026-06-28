@@ -131,12 +131,10 @@ export interface StoredState {
 // ---------- Scoring ----------
 
 export interface ScoringConfig {
-  groupQualifier: number; // points per correctly predicted advancing team (top 2)
-  exactGroupOrder: number; // bonus when the whole group's top-2 order is exact
-  reachRound: Partial<Record<KnockoutRound, number>>; // points per team correctly predicted to reach a round
-  champion: number; // bonus for correct champion
-  runnerUp: number; // bonus for correct finalist (runner-up)
-  thirdPlace: number; // bonus for correct third place
+  groupQualifier: number; // points per correctly predicted advancing team (to Round of 32)
+  exactGroupOrder: number; // bonus when the group's top-2 order is exactly right
+  knockoutRound: Partial<Record<KnockoutRound, number>>; // points for correctly picking a knockout match winner, by round
+  champion: number; // bonus for the correct champion
 }
 
 export interface BracketScore {

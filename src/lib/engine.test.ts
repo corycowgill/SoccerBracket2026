@@ -2,7 +2,13 @@ import { describe, expect, it } from "vitest";
 import type { Bracket, FeedData, FeedMatch } from "../types";
 import { buildTournament } from "./feed";
 import { bundledFeed } from "./feedClient";
-import { actualKnockout, allStandings, assignThirdPlace, resolvePredicted } from "./standings";
+import {
+  actualKnockout,
+  allStandings,
+  assignThirdPlace,
+  resolveKnockoutActual,
+  resolvePredicted,
+} from "./standings";
 import { scoreBracket } from "./scoring";
 
 const tournament = buildTournament(bundledFeed());
@@ -103,14 +109,26 @@ describe("scoring", () => {
     expect(score.total).toBeGreaterThan(0);
   });
 
-  it("gives the champion bonus for a correct final", () => {
-    const bracket = makeBracket();
-    const champ = resolvePredicted(tournament, bracket).champion!;
-    let feed = bundledFeed();
-    feed = setFinal(feed, champ, "Some Other Team", 2, 0);
+  it("scores a correct knockout pick once the group stage is done", () => {
+    let feed = playAllGroups(bundledFeed());
+    feed = setKnockout(feed, 73, "Brazil", "France", 2, 1); // Brazil wins match #73
+    const bracket: Bracket = { ...makeBracket(), knockoutPick: { 73: "Brazil" } };
+
+    const play = resolveKnockoutActual(tournament, feed, bracket);
+    expect(play.seeded).toBe(true);
+    expect(play.matchups[73]).toEqual(["Brazil", "France"]);
+    expect(play.pickWinner[73]).toBe("Brazil");
+
     const score = scoreBracket(tournament, feed, bracket);
-    // champion(30) + finalists reaching the Final(18*?) -> at least the champion bonus.
-    expect(score.breakdown.bonusPoints).toBeGreaterThanOrEqual(30);
+    expect(score.breakdown.knockoutPoints).toBe(5); // Round of 32 weight
+  });
+
+  it("does not award knockout points for a wrong pick", () => {
+    let feed = playAllGroups(bundledFeed());
+    feed = setKnockout(feed, 73, "Brazil", "France", 0, 1); // France wins
+    const bracket: Bracket = { ...makeBracket(), knockoutPick: { 73: "Brazil" } };
+    const score = scoreBracket(tournament, feed, bracket);
+    expect(score.breakdown.knockoutPoints).toBe(0);
   });
 });
 
@@ -154,7 +172,7 @@ describe("auto-fill", () => {
       thirdPlaceTeams: [],
       knockoutPick: {},
     };
-    const filled = autoFillRest(tournament, empty);
+    const filled = autoFillRest(tournament, bundledFeed(), empty);
     const p = bracketProgress(tournament, filled);
     expect(p.thirdsPicked).toBe(8);
     expect(p.complete).toBe(true);
@@ -180,6 +198,29 @@ function makeBracket(): Bracket {
     thirdPlaceTeams,
     knockoutPick: {},
   };
+}
+
+/** Mark every group match as played (1-0) so the group stage counts as complete. */
+function playAllGroups(feed: FeedData): FeedData {
+  const matches = feed.matches.map((m) =>
+    m.group && !m.score ? { ...m, score: { ft: [1, 0] as [number, number] } } : m,
+  );
+  return { ...feed, matches };
+}
+
+/** Set a knockout match's real teams and result by match number. */
+function setKnockout(
+  feed: FeedData,
+  num: number,
+  team1: string,
+  team2: string,
+  s1: number,
+  s2: number,
+): FeedData {
+  const matches = feed.matches.map((m) =>
+    m.num === num ? { ...m, team1, team2, score: { ft: [s1, s2] as [number, number] } } : m,
+  );
+  return { ...feed, matches };
 }
 
 function appearInRound(feed: FeedData, round: string, team: string): FeedData {

@@ -132,6 +132,11 @@ export function groupComplete(group: Group, feed: FeedData): boolean {
   return matches.length > 0 && matches.every(isPlayed);
 }
 
+/** Has the entire group stage finished (every group complete)? */
+export function groupStageComplete(tournament: Tournament, feed: FeedData): boolean {
+  return tournament.groups.every((g) => groupComplete(g, feed));
+}
+
 // ---------------------------------------------------------------------------
 // Reach-by-round: the set of teams that reach each knockout round.
 // Computed identically in spirit for the REAL tournament and a PREDICTION,
@@ -376,6 +381,91 @@ export function assignThirdPlace(
     if (team) result[slot.raw] = team;
   });
   return result;
+}
+
+// ---------------------------------------------------------------------------
+// Real knockout bracket (used once the group stage is complete): the actual
+// qualified teams are slotted into the Round of 32, and the player picks winners
+// from there. Their picks flow forward to populate later rounds.
+// ---------------------------------------------------------------------------
+
+export interface ActualPlayBracket {
+  matchups: Record<number, [string, string]>; // num -> [team1, team2]
+  pickWinner: Record<number, string>; // num -> the player's explicit, valid winner pick
+  champion?: string; // the player's final (match 104) pick
+  seeded: boolean; // whether the real Round of 32 line-up is known yet
+}
+
+/**
+ * Build a player's knockout bracket on the REAL Round of 32 line-up. Group
+ * winners/runners-up come from the actual standings; third-place slots come from
+ * the feed's Round-of-32 fixtures. The player's picks flow forward (W##/L##).
+ */
+export function resolveKnockoutActual(
+  tournament: Tournament,
+  feed: FeedData,
+  bracket: Bracket,
+): ActualPlayBracket {
+  const standings = allStandings(tournament, feed);
+  const groupRank = (letter: string, rank: number) =>
+    standings[letter]?.find((r) => r.rank === rank)?.team ?? "";
+
+  // Seed Round-of-32 placeholders from the feed's real team names.
+  const feedSeed: Record<string, string> = {};
+  const r32ByNum = new Map<number, FeedMatch>();
+  for (const m of feed.matches) {
+    if (m.round === "Round of 32" && m.num !== undefined) r32ByNum.set(m.num, m);
+  }
+  let seeded = false;
+  for (const km of tournament.knockout) {
+    if (km.round !== "Round of 32") continue;
+    const fm = r32ByNum.get(km.num);
+    if (!fm) continue;
+    if (isRealTeam(fm.team1)) {
+      feedSeed[km.team1.raw] = fm.team1;
+      seeded = true;
+    }
+    if (isRealTeam(fm.team2)) {
+      feedSeed[km.team2.raw] = fm.team2;
+      seeded = true;
+    }
+  }
+
+  const winnerOf: Record<number, string> = {};
+  const loserOf: Record<number, string> = {};
+  const pickWinner: Record<number, string> = {};
+  const matchups: Record<number, [string, string]> = {};
+
+  const resolveSlot = (raw: string): string => {
+    const v = raw.trim();
+    let m: RegExpMatchArray | null;
+    if ((m = v.match(/^1([A-L])$/i))) return feedSeed[v] || groupRank(m[1].toUpperCase(), 1);
+    if ((m = v.match(/^2([A-L])$/i))) return feedSeed[v] || groupRank(m[1].toUpperCase(), 2);
+    if (/^3[A-L](\/[A-L])+$/i.test(v)) return feedSeed[v] || ""; // third-place slots rely on the feed
+    if ((m = v.match(/^W(\d+)$/i))) return winnerOf[Number(m[1])] ?? "";
+    if ((m = v.match(/^L(\d+)$/i))) return loserOf[Number(m[1])] ?? "";
+    return v;
+  };
+
+  for (const km of [...tournament.knockout].sort((a, b) => a.num - b.num)) {
+    const t1 = resolveSlot(km.team1.raw);
+    const t2 = resolveSlot(km.team2.raw);
+    matchups[km.num] = [t1, t2];
+    const pick = bracket.knockoutPick[km.num];
+    let winner = "";
+    if (pick && (pick === t1 || pick === t2)) {
+      winner = pick;
+      pickWinner[km.num] = pick;
+    } else if (t1 && t2) {
+      winner = t1; // default only so later rounds can render; not a scored pick
+    }
+    if (winner) {
+      winnerOf[km.num] = winner;
+      loserOf[km.num] = winner === t1 ? t2 : t1;
+    }
+  }
+
+  return { matchups, pickWinner, champion: pickWinner[104], seeded };
 }
 
 /** Third-placed team of each group, ranked across groups (best first) for the REAL tournament. */

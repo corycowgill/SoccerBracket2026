@@ -1,7 +1,13 @@
 import { useEffect, useMemo, useState } from "react";
 import type { Bracket } from "./types";
 import { buildTournament } from "./lib/feed";
-import { actualKnockout, allStandings } from "./lib/standings";
+import {
+  actualKnockout,
+  allStandings,
+  groupStageComplete,
+  resolveKnockoutActual,
+  resolvePredicted,
+} from "./lib/standings";
 import { autoFillRest } from "./lib/autofill";
 import { bundledFeed, loadCachedFeed, refreshFeed, type FeedState } from "./lib/feedClient";
 import {
@@ -77,8 +83,29 @@ export default function App() {
   );
   const actualKO = useMemo(() => actualKnockout(mergedFeed), [mergedFeed]);
   const standings = useMemo(() => allStandings(tournament, mergedFeed), [tournament, mergedFeed]);
-
+  const groupsDone = useMemo(
+    () => groupStageComplete(tournament, mergedFeed),
+    [tournament, mergedFeed],
+  );
   const active = brackets.find((b) => b.id === activeId) ?? null;
+
+  // The knockout bracket the active player fills: the REAL Round of 32 once the
+  // group stage is done, otherwise their predicted bracket.
+  const koView = useMemo(() => {
+    if (!active) return null;
+    if (groupsDone) {
+      const play = resolveKnockoutActual(tournament, mergedFeed, active);
+      return { matchups: play.matchups, ready: play.seeded, playMode: true };
+    }
+    const pred = resolvePredicted(tournament, active);
+    return { matchups: pred.matchups, ready: active.thirdPlaceTeams.length === 8, playMode: false };
+  }, [active, groupsDone, tournament, mergedFeed]);
+
+  function championPick(): string | undefined {
+    const pick = active?.knockoutPick[104];
+    const fm = koView?.matchups[104] ?? ["", ""];
+    return pick && (pick === fm[0] || pick === fm[1]) ? pick : undefined;
+  }
 
   // ---- persistence helpers ----
   function persist(next: Bracket[]) {
@@ -209,20 +236,24 @@ export default function App() {
                 tournament={tournament}
                 bracket={active}
                 fillTab={fillTab}
+                playMode={groupsDone}
+                playMatchups={groupsDone ? koView?.matchups : undefined}
                 onGoTo={setFillTab}
-                onAutoFill={() =>
-                  updateActive((b) => ({ ...b, ...autoFillRest(tournament, b) }))
-                }
+                onAutoFill={() => updateActive((b) => autoFillRest(tournament, mergedFeed, b))}
                 onReset={() =>
-                  updateActive((b) => ({ ...b, groupOrder: {}, thirdPlaceTeams: [], knockoutPick: {} }))
+                  updateActive((b) =>
+                    groupsDone
+                      ? { ...b, knockoutPick: {} }
+                      : { ...b, groupOrder: {}, thirdPlaceTeams: [], knockoutPick: {} },
+                  )
                 }
               />
               <div className="flex gap-2">
                 <SubTab active={fillTab === "groups"} onClick={() => setFillTab("groups")}>
-                  1–2. Groups
+                  {groupsDone ? "Groups (final)" : "1–2. Groups"}
                 </SubTab>
                 <SubTab active={fillTab === "knockout"} onClick={() => setFillTab("knockout")}>
-                  3. Knockout
+                  {groupsDone ? "Knockout" : "3. Knockout"}
                 </SubTab>
               </div>
               {fillTab === "groups" ? (
@@ -230,6 +261,7 @@ export default function App() {
                   tournament={tournament}
                   bracket={active}
                   standings={standings}
+                  locked={groupsDone}
                   onChangeOrder={(letter, order) =>
                     updateActive((b) => {
                       const teams = tournament.groups.find((g) => g.letter === letter)?.teams ?? order;
@@ -262,7 +294,11 @@ export default function App() {
                 <Knockout
                   tournament={tournament}
                   bracket={active}
+                  matchups={koView?.matchups ?? {}}
+                  champion={championPick()}
                   actual={actualKO}
+                  ready={koView?.ready ?? false}
+                  playMode={groupsDone}
                   onPick={(num, team) =>
                     updateActive((b) => ({ ...b, knockoutPick: { ...b.knockoutPick, [num]: team } }))
                   }

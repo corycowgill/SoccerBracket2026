@@ -52,7 +52,8 @@ export default function Rules() {
           </li>
           <li>
             On <strong>Fill Bracket → Knockout</strong>, click your winner of every match, all the
-            way to your champion.
+            way to your champion. Once the group stage ends, this updates to the{" "}
+            <strong>real Round of 32</strong> line-up so you pick on the actual bracket.
           </li>
           <li>
             As real games are played, open <strong>Results</strong> and hit “Refresh from internet”.
@@ -62,18 +63,26 @@ export default function Rules() {
       </Section>
 
       <Section title="How points are scored">
-        <ul className="list-disc ml-5 space-y-1">
-          <li><strong>4 pts</strong> for each team you correctly send to the Round of 32.</li>
-          <li><strong>+3 pts</strong> bonus for each group where you nail the exact top-2 order.</li>
-          <li>
-            <strong>5 / 8 / 12 / 18 pts</strong> for each team you correctly predict to reach the
-            Round of 16 / Quarter-finals / Semi-finals / Final.
-          </li>
-          <li><strong>30 pts</strong> for the correct champion, <strong>18</strong> for the runner-up, <strong>12</strong> for third place.</li>
+        <p className="font-semibold text-pitch-dark">Group stage (locked once the groups finish):</p>
+        <ul className="list-disc ml-5 space-y-1 mt-1">
+          <li><strong>4 pts</strong> for each team you correctly sent to the Round of 32.</li>
+          <li><strong>+3 pts</strong> bonus for each group where you nailed the exact top-2 order.</li>
+        </ul>
+        <p className="font-semibold text-pitch-dark mt-3">
+          Knockouts — once the group stage ends, everyone picks winners on the real bracket. You earn
+          points for each match winner you pick correctly:
+        </p>
+        <ul className="list-disc ml-5 space-y-1 mt-1">
+          <li><strong>5 pts</strong> — Round of 32</li>
+          <li><strong>8 pts</strong> — Round of 16</li>
+          <li><strong>12 pts</strong> — Quarter-finals</li>
+          <li><strong>16 pts</strong> — Semi-finals</li>
+          <li><strong>8 pts</strong> — Third-place play-off · <strong>20 pts</strong> — Final</li>
+          <li><strong>+25 pts</strong> bonus for correctly naming the champion.</li>
         </ul>
         <p className="text-sm text-slate-500 mt-2">
-          Scoring rewards picking the right teams to go deep, so even if a couple of matchups differ
-          from real life, your bracket is judged fairly.
+          Your group-stage points are locked in when the groups finish, so they're safe no matter how
+          the knockouts go.
         </p>
       </Section>
 

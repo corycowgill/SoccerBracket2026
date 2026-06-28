@@ -2,39 +2,39 @@ import type {
   Bracket,
   BracketScore,
   FeedData,
-  KnockoutRound,
   ScoreLine,
   ScoringConfig,
   StandingRow,
   Tournament,
 } from "../types";
-import { allStandings, groupComplete, resolveActual, resolvePredicted } from "./standings";
+import {
+  actualKnockout,
+  allStandings,
+  groupComplete,
+  groupStageComplete,
+  resolveActual,
+  resolvePredicted,
+  resolveKnockoutActual,
+} from "./standings";
 
 /**
- * Default scoring. Tuned so that deep, correct knockout calls are worth the most,
- * while group-stage accuracy still adds up. All values live here so they are
- * easy to tweak in one place.
+ * Default scoring. Group-stage accuracy is locked in once the groups finish;
+ * knockout points are then earned per correctly-picked match winner, weighted by
+ * how deep the round is. All values live here so they are easy to tweak.
  */
 export const DEFAULT_SCORING: ScoringConfig = {
   groupQualifier: 4, // each team you sent to the Round of 32 that actually got there
   exactGroupOrder: 3, // bonus per group where you nailed BOTH 1st and 2nd
-  reachRound: {
-    "Round of 16": 5,
-    "Quarter-final": 8,
-    "Semi-final": 12,
-    Final: 18,
+  knockoutRound: {
+    "Round of 32": 5,
+    "Round of 16": 8,
+    "Quarter-final": 12,
+    "Semi-final": 16,
+    "Match for third place": 8,
+    Final: 20,
   },
-  champion: 30,
-  runnerUp: 18,
-  thirdPlace: 12,
+  champion: 25, // bonus on top of the Final win for naming the champion
 };
-
-const SCORED_ROUNDS: KnockoutRound[] = [
-  "Round of 16",
-  "Quarter-final",
-  "Semi-final",
-  "Final",
-];
 
 function intersectionSize(pred: Set<string>, actual: Set<string>): number {
   let n = 0;
@@ -54,7 +54,7 @@ export function scoreBracket(
   const standings = allStandings(tournament, feed);
   const detail: ScoreLine[] = [];
 
-  // --- Group stage: correct qualifiers (who reached the Round of 32). ---
+  // --- Group stage: correct qualifiers (who the player predicted to reach R32). ---
   const qualifiersHit = intersectionSize(
     predicted.reach["Round of 32"],
     actual.reach["Round of 32"],
@@ -82,32 +82,24 @@ export function scoreBracket(
   }
   const groupPoints = groupQualPoints + exactBonus;
 
-  // --- Knockout: teams correctly predicted to reach each round. ---
+  // --- Knockout: a point per correctly-picked match winner on the real bracket. ---
   let knockoutPoints = 0;
-  for (const round of SCORED_ROUNDS) {
-    const per = config.reachRound[round] ?? 0;
-    if (!per) continue;
-    const hit = intersectionSize(predicted.reach[round], actual.reach[round]);
-    if (hit > 0) {
-      const pts = hit * per;
-      knockoutPoints += pts;
-      detail.push({ label: `${hit} team${hit === 1 ? "" : "s"} correct to reach ${round}`, points: pts });
-    }
-  }
-
-  // --- Final-standings bonuses. ---
   let bonusPoints = 0;
-  if (actual.champion && predicted.champion === actual.champion) {
-    bonusPoints += config.champion;
-    detail.push({ label: `Champion: ${actual.champion}`, points: config.champion });
-  }
-  if (actual.runnerUp && predicted.runnerUp === actual.runnerUp) {
-    bonusPoints += config.runnerUp;
-    detail.push({ label: `Runner-up: ${actual.runnerUp}`, points: config.runnerUp });
-  }
-  if (actual.third && predicted.third === actual.third) {
-    bonusPoints += config.thirdPlace;
-    detail.push({ label: `Third place: ${actual.third}`, points: config.thirdPlace });
+  if (groupStageComplete(tournament, feed)) {
+    const play = resolveKnockoutActual(tournament, feed, bracket);
+    const ak = actualKnockout(feed);
+    for (const km of tournament.knockout) {
+      const winner = ak.winners[km.num];
+      if (winner && play.pickWinner[km.num] === winner) {
+        const pts = config.knockoutRound[km.round] ?? 0;
+        knockoutPoints += pts;
+        detail.push({ label: `${km.round}: picked ${winner} ✓`, points: pts });
+      }
+    }
+    if (ak.champion && play.champion === ak.champion) {
+      bonusPoints += config.champion;
+      detail.push({ label: `Champion bonus: ${ak.champion}`, points: config.champion });
+    }
   }
 
   return {
